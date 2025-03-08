@@ -2,6 +2,8 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.sqlite3
+*.log
 
 # C extensions
 *.so
@@ -32,6 +34,7 @@ MANIFEST
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+settings.pyc
 
 # Installer logs
 pip-log.txt
@@ -170,3 +173,5 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+# Database backups
+*.db
