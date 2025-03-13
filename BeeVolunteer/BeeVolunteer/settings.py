@@ -75,8 +75,15 @@ WSGI_APPLICATION = 'BeeVolunteer.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'mssql',  # Corrected ENGINE
+        'NAME': 'beeVolunteer',  # Should be a string
+        'USER': '',
+        'PASSWORD': '',
+        'HOST': 'localhost',  # or use the IP address if you prefer
+        'PORT': '',  # default port
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',  # ODBC driver name
+        },
     }
 }
 
