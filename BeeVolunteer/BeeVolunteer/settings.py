@@ -37,7 +37,18 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'rest_framework.authtoken',
+    'BeeVolunteer',
+    'pages',
+
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -77,10 +88,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'mssql',  # Corrected ENGINE
         'NAME': 'beeVolunteer',  # Should be a string
-        'USER': '',
-        'PASSWORD': '',
-        'HOST': 'localhost',  # or use the IP address if you prefer
-        'PORT': '',  # default port
+        'USER': 'sa',
+        'PASSWORD': 'beeVolunteer1!',
+        'HOST': '127.0.0.1',  # or use the IP address if you prefer
+        'PORT': '1433',  # default port
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',  # ODBC driver name
         },
