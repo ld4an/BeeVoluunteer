@@ -2,6 +2,8 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from .models import Organization, User, Event, EventVolunteer
 from .serializers import OrganizationSerializer, UserSerializer, EventSerializer, EventVolunteerSerializer
+from .serializers import UserRegisterSerializer
+from rest_framework import generics
 
 
 # ======== Organization API View ===========
@@ -47,3 +49,7 @@ class EventVolunteerViewSet(viewsets.ModelViewSet):
     queryset = EventVolunteer.objects.all()
     serializer_class = EventVolunteerSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
+
+class RegisterAPIView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserRegisterSerializer

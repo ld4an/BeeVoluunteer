@@ -36,7 +36,7 @@
                 {% csrf_token %}
 
                 <div class="mb-3">
-                    <label for="username" class="form-label">Email or Username</label>
+                    <label for="username" class="form-label">Email</label>
                     <input type="text" class="form-control" id="username" name="username" required>
                 </div>
 
@@ -58,7 +58,7 @@
                 <button type="submit" class="btn btn-primary w-100">Login</button>
 
                 <div class="text-center mt-3">
-                    <a href="{% url 'password_reset' %}">Forgot password?</a> |
+                    <a href="{% url 'password_reset' %}">Forgot password?</a>
                     <a href="{% url 'register' %}">Create an account</a>
                 </div>
             </form>

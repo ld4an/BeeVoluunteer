@@ -1,3 +1,4 @@
+from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
 from .models import Organization, User, Event, EventVolunteer
 
@@ -26,3 +27,16 @@ class EventVolunteerSerializer(serializers.ModelSerializer):
     class Meta:
         model = EventVolunteer
         fields = '__all__'
+
+
+class UserRegisterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'first_name', 'last_name', 'email', 'password']
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
+
+        def create(self, validated_data):
+            validated_data['password'] = make_password(validated_data['password'])
+            return super().create(validated_data)
