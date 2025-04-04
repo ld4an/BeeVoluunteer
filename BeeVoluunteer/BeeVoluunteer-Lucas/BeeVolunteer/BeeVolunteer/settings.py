@@ -37,7 +37,21 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'BeeVolunteer',
+    'pages',
+
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -75,8 +89,15 @@ WSGI_APPLICATION = 'BeeVolunteer.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'mssql',  # Corrected ENGINE
+        'NAME': 'BeeVolunteer',  # Should be a string
+        #'USER': 'sa',
+       # 'PASSWORD': 'beeVolunteer1!',
+        'HOST': 'localhost',  # or use the IP address if you prefer
+       # 'PORT': '1433',  # default port
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',  # ODBC driver name
+        },
     }
 }
 
