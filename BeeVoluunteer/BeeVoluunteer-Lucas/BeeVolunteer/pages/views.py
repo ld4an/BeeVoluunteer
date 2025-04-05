@@ -17,19 +17,29 @@ def login_view(request):
         email = request.POST.get('email')
         password = request.POST.get('password')
 
+        if not email or not password:
+            messages.error(request, 'Please provide both email and password.')
+            return redirect('login')
+
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
             messages.error(request, 'User not found.')
             return redirect('login')
-        if check_password(password, user.password):  # Check password against hashed one
-            request.sessions['user_id'] = user.id
+
+        if check_password(password, user.password):
+            # Salvăm user-ul în sesiune
+            request.session['user_id'] = user.id
+
+            # Redirect spre homepage
             messages.success(request, 'Logged in successfully!')
-            return redirect('dashboard')  # Or wherever
+            return redirect('homepage')
         else:
             messages.error(request, 'Incorrect password.')
             return redirect('login')
+
     return render(request, 'pages/login.html')
+
 
 
 def register_view(request):
@@ -82,5 +92,33 @@ def password_reset(request):
             return redirect('reset_password')
 
     return render(request, 'pages/reset_password.html')
+
+def homepage_view(request):
+    user_id = request.session.get('user_id')
+    user_name = "Utilizator"
+
+    if user_id:
+        try:
+            user = User.objects.get(id=user_id)
+            user_name = f"{user.first_name} {user.last_name}"
+        except User.DoesNotExist:
+            pass
+
+    return render(request, 'pages/homepage.html', {'user_name': user_name})
+
+
+def account_view(request):
+    return render(request, 'pages/account.html')
+
+def announcements_view(request):
+    return render(request,'pages/my_announcements.html')
+
+
+
+def logout_view(request):
+    request.session.flush()
+    #messages.error(request, "Logged out successfully!")
+    return redirect('login')
+
 
 # Create your views here.
