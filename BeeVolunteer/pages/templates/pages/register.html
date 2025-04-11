@@ -43,7 +43,7 @@
                 <select class="form-select" id="role" name="role" onchange="toggleFields()" required>
                     <option selected disabled value="">Select role</option>
                     <option value="volunteer">Volunteer</option>
-                    <option value="organization">Organization</option>
+                    <option value="organizer">Organization</option>
                 </select>
             </div>
 
@@ -64,14 +64,14 @@
             </div>
 
             <!-- organization Fields -->
-            <div id="organization-fields" style="display: none;">
+            <div id="organizer-fields" style="display: none;">
                 <div class="mb-3">
                     <label for="org_name" class="form-label">Organization Name</label>
                     <input type="text" class="form-control" id="org_name" name="org_name">
                 </div>
                 <div class="mb-3">
-                    <label for="description" class="form-label">Description</label>
-                    <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    <label for="org_description" class="form-label">Description</label>
+                    <textarea class="form-control" id="org_description" name="org_description" rows="3"></textarea>
                 </div>
                 <div class="mb-3">
                     <label for="org_phone" class="form-label">Phone</label>
@@ -117,7 +117,7 @@
         function toggleFields(){
              const role = document.getElementById("role").value;
              document.getElementById("volunteer-fields").style.display = role === "volunteer" ? "block" : "none"
-             document.getElementById("organization-fields").style.display = role === "organization" ? "block" : "none";
+             document.getElementById("organizer-fields").style.display = role === "organizer" ? "block" : "none";
         }
         document.querySelector(".password-toggle").addEventListener("click", function() {
             let passwordField = document.getElementById("password");
