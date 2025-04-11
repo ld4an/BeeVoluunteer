@@ -29,52 +29,96 @@
 </head>
 <body>
 
-    <div class="container">
-        <div class="register-container">
-            <h3 class="text-center mb-4">Create an Account</h3>
 
-            <form method="POST" action="{% url 'register' %}">
-                {% csrf_token %}
+<div class="container">
+    <div class="register-container">
+        <h3 class="text-center mb-4">Create an Account</h3>
+
+        <form method="POST" action="{% url 'register' %}">
+            {% csrf_token %}
+
+            <!-- Role Selector -->
+            <div class="mb-3">
+                <label for="role" class="form-label">Select Role</label>
+                <select class="form-select" id="role" name="role" onchange="toggleFields()" required>
+                    <option selected disabled value="">Select role</option>
+                    <option value="volunteer">Volunteer</option>
+                    <option value="organization">Organization</option>
+                </select>
+            </div>
+
+            <!-- Volunteer Fields -->
+            <div id="volunteer-fields" style="display: none;">
                 <div class="mb-3">
                     <label for="first_name" class="form-label">First Name</label>
-                    <input type="text" class="form-control" id="first_name" name="first_name" required>
+                    <input type="text" class="form-control" id="first_name" name="first_name">
                 </div>
-
                 <div class="mb-3">
                     <label for="last_name" class="form-label">Last Name</label>
-                    <input type="text" class="form-control" id="last_name" name="last_name" required>
+                    <input type="text" class="form-control" id="last_name" name="last_name">
                 </div>
-
                 <div class="mb-3">
-                    <label for="email" class="form-label">Email</label>
-                    <input type="email" class="form-control" id="email" name="email" required>
+                    <label for="phone" class="form-label">Phone</label>
+                    <input type="text" class="form-control" id="phone" name="phone">
                 </div>
+            </div>
 
+            <!-- organization Fields -->
+            <div id="organization-fields" style="display: none;">
                 <div class="mb-3">
-                    <label for="password" class="form-label">Password</label>
-                    <div class="input-group">
-                        <input type="password" class="form-control" id="password" name="password" required>
-                        <button class="btn btn-outline-secondary password-toggle" type="button">
-                            <i class="bi bi-eye-slash"></i>
-                        </button>
-                    </div>
+                    <label for="org_name" class="form-label">Organization Name</label>
+                    <input type="text" class="form-control" id="org_name" name="org_name">
                 </div>
-
                 <div class="mb-3">
-                    <label for="confirm_password" class="form-label">Confirm Password</label>
-                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" name="description" rows="3"></textarea>
                 </div>
-
-                <button type="submit" class="btn btn-primary w-100">Register</button>
-
-                <div class="text-center mt-3">
-                    Already have an account? <a href="{% url 'login' %}">Login here</a>.
+                <div class="mb-3">
+                    <label for="org_phone" class="form-label">Phone</label>
+                    <input type="text" class="form-control" id="org_phone" name="org_phone">
                 </div>
-            </form>
-        </div>
+                <div class="mb-3">
+                    <label for="website" class="form-label">Website</label>
+                    <input type="text" class="form-control" id="website" name="website">
+                </div>
+            </div>
+
+            <!-- Common Fields -->
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" name="email" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <div class="input-group">
+                    <input type="password" class="form-control" id="password" name="password" required>
+                    <button class="btn btn-outline-secondary password-toggle" type="button">
+                        <i class="bi bi-eye-slash"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="confirm_password" class="form-label">Confirm Password</label>
+                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Register</button>
+
+            <div class="text-center mt-3">
+                Already have an account? <a href="{% url 'login' %}">Login here</a>.
+            </div>
+        </form>
     </div>
+</div>
 
     <script>
+        function toggleFields(){
+             const role = document.getElementById("role").value;
+             document.getElementById("volunteer-fields").style.display = role === "volunteer" ? "block" : "none"
+             document.getElementById("organization-fields").style.display = role === "organization" ? "block" : "none";
+        }
         document.querySelector(".password-toggle").addEventListener("click", function() {
             let passwordField = document.getElementById("password");
             if (passwordField.type === "password") {

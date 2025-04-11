@@ -1,10 +1,10 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 #|Ignora eroarea asta, Django e ***** si o ia din "BeeV.." cu cerc (package), nu de la radacina
-#v
-from BeeVolunteer.models import User
+from BeeVolunteer.models import User, Organization
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.hashers import check_password
+
 
 
 def index(request):
@@ -23,9 +23,12 @@ def login_view(request):
             messages.error(request, 'User not found.')
             return redirect('login')
         if check_password(password, user.password):  # Check password against hashed one
-            request.sessions['user_id'] = user.id
+            request.session['user_id'] = user.id
             messages.success(request, 'Logged in successfully!')
-            return redirect('dashboard')  # Or wherever
+            if user.role == 'volunteer':
+                return redirect('volunteer_homepage')  # Or wherever
+            if user.role == 'organizer':
+                return redirect('organization_homepage')
         else:
             messages.error(request, 'Incorrect password.')
             return redirect('login')
@@ -34,11 +37,10 @@ def login_view(request):
 
 def register_view(request):
     if request.method == 'POST':
-        first_name = request.POST.get('first_name')
-        last_name = request.POST.get('last_name')
         email = request.POST.get('email')
         password = request.POST.get('password')
         confirm_password = request.POST.get('confirm_password')
+        role=request.POST.get('role')
 
         if password != confirm_password:
             messages.error(request, "Passwords do not match.")
@@ -47,13 +49,36 @@ def register_view(request):
         if User.objects.filter(email=email).exists():
             messages.error(request, "Email already registered.")
             return redirect('register')
-
-        User.objects.create(
-            first_name=first_name,
-            last_name=last_name,
-            email=email,
-            password=make_password(password),
-        )
+        if role == 'volunteer':
+            first_name = request.POST.get('first_name')
+            last_name = request.POST.get('last_name')
+            phone = request.POST.get('phone')
+            User.objects.create(
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                password=make_password(password),
+                role = role,
+                phone=phone
+            )
+        elif role == 'organizer':
+            org_name = request.POST.get('org_name')
+            org_description = request.POST.get('org_description')
+            org_phone = request.POST.get('org_phone')
+            website = request.POST.get('website')
+            organization = Organization.objects.create(
+                name=org_name,
+                description=org_description,
+                email=email,
+                phone=org_phone,
+                website=website,
+            )
+            User.objects.create(
+                email=email,
+                password=make_password(password),
+                role=role,
+                organization=organization,
+            )
 
         messages.success(request, "Account created successfully!")
         return redirect('login')
@@ -82,5 +107,49 @@ def password_reset(request):
             return redirect('reset_password')
 
     return render(request, 'pages/reset_password.html')
+
+
+def volunteer_homepage_view(request):
+    user_id = request.session.get('user_id')
+    user_name = "Utilizator"
+
+    if user_id:
+        try:
+            user = User.objects.get(id=user_id)
+            user_name = f"{user.first_name} {user.last_name}"
+        except User.DoesNotExist:
+            pass
+
+    return render(request, 'pages/homepage_volunteers.html', {'user_name': user_name})
+
+def organization_homepage_view(request):
+    user_id = request.session.get('user_id')
+    organization_name = "Organizație"
+
+    if user_id:
+        try:
+            user = User.objects.get(id=user_id)
+            if user.role != 'organizer':
+                return redirect('login')  # Optional: restrict to organizers
+
+            if user.organization:  # Assuming a ForeignKey from User to Organization
+                organization_name = user.organization.name
+
+        except User.DoesNotExist:
+            pass
+
+    return render(request, 'pages/homepage_organization.html', {'organization_name': organization_name})
+
+
+def account_view(request):
+    return render(request, 'pages/account.html')
+
+def announcements_view(request):
+    return render(request,'pages/my_announcements.html')
+
+def logout_view(request):
+    request.session.flush()
+    #messages.error(request, "Logged out successfully!")
+    return redirect('login')
 
 # Create your views here.
