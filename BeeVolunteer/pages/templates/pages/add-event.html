@@ -47,12 +47,12 @@
 
                             <div class="mb-3">
                                 <label for="description" class="form-label">Short Description</label>
-                                <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                                <textarea class="form-control" id="description" name="description" rows="3"></textarea>
                             </div>
 
                             <div class="mb-3">
                                 <label for="event_date" class="form-label">Event Date</label>
-                                <input type="date" class="form-control" id="event_date" name="event_date" required>
+                                <input type="datetime-local" class="form-control" id="event_date" name="event_date" required>
                             </div>
 
                             <div class="mb-3">
@@ -65,19 +65,10 @@
                                 <input type="number" class="form-control" id="volunteer_count" name="volunteer_count" min="1" required>
                             </div>
 
-                            <div class="mb-3">
-                                <label for="creator_type" class="form-label">Event Created By</label>
-                                <select class="form-select" id="creator_type" name="creator_type" required>
-                                    <option value="volunteer">As a volunteer</option>
-                                    <!-- Later you could add: <option value="org1">Organization A</option> -->
-                                </select>
-                            </div>
-
                             <div class="text-end">
-                                <button type="submit" class="btn btn-success">I'm looking for volunteers!</button>
+                                <button type="submit" class="btn btn-success">Create Event</button>
                             </div>
                         </form>
-
 
                     </div>
                 </div>

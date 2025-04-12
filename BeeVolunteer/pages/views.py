@@ -17,6 +17,8 @@ from django.contrib import messages
 from django.views.decorators.cache import never_cache
 from BeeVolunteer.models import User
 
+from datetime import datetime
+
 # THE VERY FIRST HOMEPAGE OF THE WEBSITE...
 def home(request):
     return render(request, 'pages/root-home_page.html')
@@ -250,31 +252,64 @@ def logout_view(request):
 #         return redirect('add-event')  # or wherever you want to redirect
 #     return render(request, 'pages/add-event.html')
 
+# def add_event(request):
+#     if request.method == 'POST':
+#         name = request.POST.get('event_name')
+#         description = request.POST.get('description')
+#         date = request.POST.get('event_date')  # This is just a date string
+#         location = request.POST.get('location')
+#         max_volunteers = request.POST.get('volunteer_count')
+#
+#         # Convert date string to datetime
+#         from datetime import datetime
+#         event_datetime = datetime.strptime(date, '%Y-%m-%d')  # Add time if needed
+#
+#         # Set the organization — example: based on logged in user
+#         user_org = request.user.organization  # Make sure this works for your user model
+#
+#         # Create the event
+#         Event.objects.create(
+#             name=name,
+#             description=description,
+#             date=event_datetime,
+#             location=location,
+#             max_volunteers=max_volunteers,
+#             organization=user_org
+#         )
+#         return redirect('add-event')
+#     return render(request, 'pages/add-event.html')
+
 def add_event(request):
     if request.method == 'POST':
         name = request.POST.get('event_name')
         description = request.POST.get('description')
-        date = request.POST.get('event_date')  # This is just a date string
+        date_str = request.POST.get('event_date')
         location = request.POST.get('location')
         max_volunteers = request.POST.get('volunteer_count')
 
-        # Convert date string to datetime
-        from datetime import datetime
-        event_datetime = datetime.strptime(date, '%Y-%m-%d')  # Add time if needed
+        # Parse date and time
+        event_datetime = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
 
-        # Set the organization — example: based on logged in user
-        user_org = request.user.organization  # Make sure this works for your user model
+        # Find or create a default organization for volunteer-created events
+        default_org, _ = Organization.objects.get_or_create(
+            name="Volunteer Created Events",
+            defaults={
+                'email': 'volunteers@beevent.org',
+                'description': 'Auto-assigned org for events created by volunteers',
+            }
+        )
 
-        # Create the event
+        # Save event
         Event.objects.create(
             name=name,
             description=description,
             date=event_datetime,
             location=location,
             max_volunteers=max_volunteers,
-            organization=user_org
+            organization=default_org
         )
-        return redirect('add-event')
+        return redirect('volunteer_homepage')
+
     return render(request, 'pages/add-event.html')
 
 
