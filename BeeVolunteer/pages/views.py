@@ -3,6 +3,7 @@ from django.contrib import messages
 #|Ignora eroarea asta, Django e ***** si o ia din "BeeV.." cu cerc (package), nu de la radacina
 #v
 from BeeVolunteer.models import User, Organization
+from BeeVolunteer.models import Event
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.hashers import check_password
 
@@ -228,5 +229,54 @@ def logout_view(request):
     request.session.flush()
     messages.error(request, "Logged out successfully!")
     return redirect('login')
+
+# THE 'add-event' REQUEST
+# def add_event(request):
+#     if request.method == 'POST':
+#         event_name = request.POST['event_name']
+#         description = request.POST['description']
+#         event_date = request.POST['event_date']
+#         location = request.POST['location']
+#         volunteer_count = request.POST['volunteer_count']
+#
+#         Event.objects.create(
+#             event_name=event_name,
+#             description=description,
+#             event_date=event_date,
+#             location=location,
+#             volunteer_count=volunteer_count
+#         )
+#
+#         return redirect('add-event')  # or wherever you want to redirect
+#     return render(request, 'pages/add-event.html')
+
+def add_event(request):
+    if request.method == 'POST':
+        name = request.POST.get('event_name')
+        description = request.POST.get('description')
+        date = request.POST.get('event_date')  # This is just a date string
+        location = request.POST.get('location')
+        max_volunteers = request.POST.get('volunteer_count')
+
+        # Convert date string to datetime
+        from datetime import datetime
+        event_datetime = datetime.strptime(date, '%Y-%m-%d')  # Add time if needed
+
+        # Set the organization — example: based on logged in user
+        user_org = request.user.organization  # Make sure this works for your user model
+
+        # Create the event
+        Event.objects.create(
+            name=name,
+            description=description,
+            date=event_datetime,
+            location=location,
+            max_volunteers=max_volunteers,
+            organization=user_org
+        )
+        return redirect('add-event')
+    return render(request, 'pages/add-event.html')
+
+
 
 # Create your views here.
