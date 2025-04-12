@@ -29,8 +29,8 @@ class User(models.Model):
         ('organizer', 'Organizer'),  # Can create/manage events
     ]
 
-    first_name = models.CharField(max_length=100)  # User's first name
-    last_name = models.CharField(max_length=100)  # User's last name
+    first_name = models.CharField(max_length=100,null=True, blank=True)  # User's first name
+    last_name = models.CharField(max_length=100,null=True, blank=True)  # User's last name
     email = models.EmailField(unique=True)  # Unique email for authentication
     password = models.CharField(max_length=255)  # Hashed password for security
     phone = models.CharField(max_length=20, null=True, blank=True)  # Optional phone number

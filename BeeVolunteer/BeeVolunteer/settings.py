@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'BeeVolunteer',
     'pages',
+
 ]
 
 REST_FRAMEWORK = {
@@ -87,17 +88,17 @@ WSGI_APPLICATION = 'BeeVolunteer.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'mssql',  # Corrected ENGINE
-    #     'NAME': 'BeeVolunteer',  # Should be a string
-    #     'USER': 'sa',
-    #     'PASSWORD': 'beeVolunteer1!',
-    #     'HOST': '127.0.0.1',  # or use the IP address if you prefer
-    #     'PORT': '1433',  # default port
-    #     'OPTIONS': {
-    #         'driver': 'ODBC Driver 17 for SQL Server',  # ODBC driver name
-    #     },
-    # }
+    'default': {
+        'ENGINE': 'mssql',  # Corrected ENGINE
+        'NAME': 'BeeVolunteer',  # Should be a string
+        #'USER': 'sa',
+       # 'PASSWORD': 'beeVolunteer1!',
+        'HOST': 'localhost',  # or use the IP address if you prefer
+       # 'PORT': '1433',  # default port
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',  # ODBC driver name
+        },
+    }
 }
 
 
