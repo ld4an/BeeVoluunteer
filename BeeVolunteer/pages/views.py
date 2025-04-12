@@ -24,7 +24,41 @@ def index(request):
     """The home page for BeeVolunteer."""
     return render(request, 'pages/login.html')
 
+
+# def login_view(request):
+#     if request.method == 'POST':
+#         email = request.POST.get('email')
+#         password = request.POST.get('password')
+#
+#         try:
+#             user = User.objects.get(email=email)
+#         except User.DoesNotExist:
+#             messages.error(request, 'User not found.')
+#             return redirect('login')
+#         if check_password(password, user.password):  # Check password against hashed one
+#             request.session['user_id'] = user.id
+#             messages.success(request, 'Logged in successfully!')
+#             if user.role == 'volunteer':
+#                 return redirect('volunteer_homepage')  # Or wherever
+#             if user.role == 'organizer':
+#                 return redirect('organization_homepage')
+#         else:
+#             messages.error(request, 'Incorrect password.')
+#             return redirect('login')
+#     return render(request, 'pages/login.html')
+
+@never_cache
 def login_view(request):
+    if request.session.get('user_id'):
+        try:
+            user = User.objects.get(id=request.session['user_id'])
+            if user.role == 'volunteer':
+                return redirect('volunteer_homepage')
+            elif user.role == 'organizer':
+                return redirect('organization_homepage')
+        except User.DoesNotExist:
+            pass  # if user not found, allow to continue to login page
+
     if request.method == 'POST':
         email = request.POST.get('email')
         password = request.POST.get('password')
@@ -34,16 +68,18 @@ def login_view(request):
         except User.DoesNotExist:
             messages.error(request, 'User not found.')
             return redirect('login')
-        if check_password(password, user.password):  # Check password against hashed one
+
+        if check_password(password, user.password):
             request.session['user_id'] = user.id
             messages.success(request, 'Logged in successfully!')
             if user.role == 'volunteer':
-                return redirect('volunteer_homepage')  # Or wherever
-            if user.role == 'organizer':
+                return redirect('volunteer_homepage')
+            elif user.role == 'organizer':
                 return redirect('organization_homepage')
         else:
             messages.error(request, 'Incorrect password.')
             return redirect('login')
+
     return render(request, 'pages/login.html')
 
 
