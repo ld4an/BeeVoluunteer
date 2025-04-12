@@ -6,11 +6,23 @@ from BeeVolunteer.models import User, Organization
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.hashers import check_password
 
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.views.decorators.cache import never_cache
+from BeeVolunteer.models import User
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.views.decorators.cache import never_cache
+from BeeVolunteer.models import User
+
+# THE VERY FIRST HOMEPAGE OF THE WEBSITE...
+def home(request):
+    return render(request, 'pages/root-home_page.html')
 
 def index(request):
     """The home page for BeeVolunteer."""
     return render(request, 'pages/login.html')
-
 
 def login_view(request):
     if request.method == 'POST':
@@ -108,16 +120,6 @@ def password_reset(request):
 
     return render(request, 'pages/reset_password.html')
 
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.views.decorators.cache import never_cache
-from BeeVolunteer.models import User
-
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.views.decorators.cache import never_cache
-from BeeVolunteer.models import User
-
 """
 @never_cache
 def homepage_view(request):
@@ -186,12 +188,9 @@ def account_view(request):
 def announcements_view(request):
     return render(request,'pages/my_announcements.html')
 
-
-
 def logout_view(request):
     request.session.flush()
     messages.error(request, "Logged out successfully!")
     return redirect('login')
-
 
 # Create your views here.
