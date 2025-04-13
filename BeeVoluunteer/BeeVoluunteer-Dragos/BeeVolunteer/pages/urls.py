@@ -10,7 +10,8 @@ urlpatterns = [
     path('reset-password', password_reset, name='password_reset'),
     path('homepage', homepage_view, name='homepage'),
 
-    path('settings', account_view, name='settings'),
+    path('settings/', account_view, name='settings'),
+    path('settings/update/', views.update_settings, name='update_settings'),
     path('my-announcements', announcements_view, name='announcements'),
     path('logout/', logout_view, name='logout'),
 
