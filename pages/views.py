@@ -158,7 +158,54 @@ def organization_homepage_view(request):
 
 
 def account_view(request):
-    return render(request, 'pages/account.html')
+    user_id = request.session.get('user_id')
+    user_name = "Utilizator"
+    user = None
+
+    if user_id:
+        try:
+            user = User.objects.get(id=user_id)
+            user_name = f"{user.first_name} {user.last_name}"
+        except User.DoesNotExist:
+            pass
+
+    return render(request, 'pages/account.html', {
+        'user_name': user_name,
+        'user': user,
+    })
+
+def update_settings(request):
+    if request.method == 'POST':
+        user_id = request.session.get('user_id')
+
+        if not user_id:
+            messages.error(request, "You must be logged in to update your settings.")
+            return redirect('login')
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            messages.error(request, "User not found.")
+            return redirect('login')
+
+        # Get data from the form
+        full_name = request.POST.get('username', '')
+        email = request.POST.get('email', '')
+        password = request.POST.get('password', '')
+
+        # Split full name into first and last
+        name_parts = full_name.strip().split(' ', 1)
+        user.first_name = name_parts[0]
+        user.last_name = name_parts[1] if len(name_parts) > 1 else ''
+
+        user.email = email
+
+        if password:
+            user.password = make_password(password)
+
+        user.save()
+        messages.success(request, "Account settings updated successfully.")
+        return redirect('settings')
 
 def announcements_view(request):
     return render(request,'pages/my_announcements.html')
