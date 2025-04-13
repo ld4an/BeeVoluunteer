@@ -312,6 +312,62 @@ def add_event(request):
 
     return render(request, 'pages/add-event.html')
 
+# TREBUIE SA REZOLVAM CU TABELUL 'USERS / ORGANIZATIONS'
+# def add_event(request):
+#     if request.method == 'POST':
+#         name = request.POST.get('event_name')
+#         description = request.POST.get('description')
+#         date_str = request.POST.get('event_date')
+#         location = request.POST.get('location')
+#         max_volunteers = request.POST.get('volunteer_count')
+#
+#         # Parse datetime string
+#         event_datetime = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
+#
+#         # Get user role
+#         user = request.user
+#         role = getattr(user, 'role', None)
+#
+#         # Determine which organization to link
+#         if role == 'volunteer':
+#             # Assign event to a default pseudo-organization
+#             default_org, _ = Organization.objects.get_or_create(
+#                 name="Volunteer Created Events",
+#                 defaults={
+#                     'email': 'volunteers@beevent.org',
+#                     'description': 'Auto-assigned org for events created by volunteers',
+#                 }
+#             )
+#             selected_org = default_org
+#
+#         elif role == 'organizer':
+#             # Organizer must be linked to an organization
+#             if hasattr(user, 'organization'):
+#                 selected_org = user.organization
+#             else:
+#                 # Optional: handle missing org (should not happen)
+#                 return render(request, 'pages/add-event.html', {
+#                     'error': 'Organizer account is not linked to an organization.'
+#                 })
+#         else:
+#             return render(request, 'pages/add-event.html', {
+#                 'error': 'You do not have permission to create events.'
+#             })
+#
+#         # Create the event
+#         Event.objects.create(
+#             name=name,
+#             description=description,
+#             date=event_datetime,
+#             location=location,
+#             max_volunteers=max_volunteers,
+#             organization=selected_org
+#         )
+#
+#         return redirect('volunteer_homepage')
+#
+#     return render(request, 'pages/add-event.html')
+
 
 
 # Create your views here.
