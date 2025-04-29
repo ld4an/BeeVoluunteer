@@ -1,6 +1,6 @@
 """Defines URL patterns for pages."""
-from .views import register_view, login_view, password_reset, volunteer_homepage_view, account_view, announcements_view, \
-    logout_view, home, add_event, organization_homepage_view
+from .views import register_view, home,login_view, password_reset, volunteer_homepage_view, account_view, announcements_view, \
+    logout_view, add_event, organization_homepage_view
 from django.urls import path
 
 from . import views

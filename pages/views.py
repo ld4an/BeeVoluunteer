@@ -1,21 +1,18 @@
-from datetime import datetime
+import datetime
 
-# |Ignora eroarea asta, Django e ***** si o ia din "BeeV.." cu cerc (package), nu de la radacina
-from BeeVolunteer.models import User, Organization, Event
-from django.contrib import messages
-from django.contrib.auth.hashers import check_password
-from django.contrib.auth.hashers import make_password
 from django.shortcuts import render, redirect
+from django.contrib import messages
+#|Ignora eroarea asta, Django e ***** si o ia din "BeeV.." cu cerc (package), nu de la radacina
+from BeeVolunteer.models import User, Organization, Event
+from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import check_password
 
 
-# THE VERY FIRST HOMEPAGE OF THE WEBSITE...
 def home(request):
     return render(request, 'pages/root-home_page.html')
-
 def index(request):
     """The home page for BeeVolunteer."""
     return render(request, 'pages/login.html')
-
 
 def login_view(request):
     if request.session.get('user_id'):
@@ -48,7 +45,6 @@ def login_view(request):
             messages.error(request, 'Incorrect password.')
             return redirect('login')
     return render(request, 'pages/login.html')
-
 
 def register_view(request):
     if request.method == 'POST':
@@ -200,6 +196,39 @@ def add_event(request):
         return redirect('volunteer_homepage')
 
     return render(request, 'pages/add-event.html')
+
+def update_settings(request):
+    if request.method == 'POST':
+        user_id = request.session.get('user_id')
+
+        if not user_id:
+            messages.error(request, "You must be logged in to update your settings.")
+            return redirect('login')
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            messages.error(request, "User not found.")
+            return redirect('login')
+
+        # Get data from the form
+        full_name = request.POST.get('username', '')
+        email = request.POST.get('email', '')
+        password = request.POST.get('password', '')
+
+        # Split full name into first and last
+        name_parts = full_name.strip().split(' ', 1)
+        user.first_name = name_parts[0]
+        user.last_name = name_parts[1] if len(name_parts) > 1 else ''
+
+        user.email = email
+
+        if password:
+            user.password = make_password(password)
+
+        user.save()
+        messages.success(request, "Account settings updated successfully.")
+        return redirect('settings')
 
 
 # Create your views here.

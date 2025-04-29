@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ro">
 <head>
     <meta charset="UTF-8">
-    <title>Home | BeeVolunteer</title>
+    <title>Acasă | BeeVolunteer</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </head>
@@ -11,14 +11,14 @@
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
     <div class="container">
-        <a class="navbar-brand fw-bold" href="{% url 'organization_homepage' %}">BeeVolunteer</a>
+        <a class="navbar-brand fw-bold" href="#">BeeVolunteer</a>
         <div class="dropdown ms-auto">
             <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                {{ user_name|default:"User" }}
+                {{ user_name|default:"Organizatie" }}
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
-                <li><a class="dropdown-item" href="/settings/">Account Settings</a></li>
-                <li><a class="dropdown-item" href="/my-announcements/">My Announcements</a></li>
+                <li><a class="dropdown-item" href="/settings/">Account settings</a></li>
+                <li><a class="dropdown-item" href="/my-announcements/">Active listings</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item text-danger" href="/logout/">Sign out</a></li>
             </ul>
@@ -26,16 +26,16 @@
     </div>
 </nav>
 
-<!-- Main content -->
+<!-- Conținut principal -->
 <div class="container mt-5 text-center">
     <h1 class="mb-4">Welcome to BeeVolunteer!</h1>
-    <p class="lead">What would you like to do?</p>
+
+    <p class="lead">Dashboard?</p>
 
     <div class="d-grid gap-3 col-6 mx-auto">
         <a href="/add-event/" class="btn btn-primary btn-lg">
-            🧑‍💼 I'm looking for volunteers
+             Look for volunteers
         </a>
-        <!-- Butonul "I want to volunteer" a fost eliminat -->
     </div>
 </div>
 
