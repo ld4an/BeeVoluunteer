@@ -87,17 +87,16 @@ WSGI_APPLICATION = 'BeeVolunteer.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-
 DATABASES = {
     'default': {
-        'ENGINE': 'mssql',
-         'NAME': 'BeeVolunteer',
-         # 'USER': 'localhost',
-         # 'PASSWORD': 'beeVolunteer1!',
-         'HOST': 'localhost',
-         #'PORT': '1433',  # default port
-         'OPTIONS': {
-         'driver': 'ODBC Driver 17 for SQL Server',
+        'ENGINE': 'mssql',  # Corrected ENGINE
+        'NAME': 'beeVolunteer',  # Should be a string
+        'USER': 'sa',
+        'PASSWORD': 'beeVolunteer1!',
+        'HOST': '127.0.0.1',  # or use the IP address if you prefer
+        'PORT': '1433',  # default port
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',  # ODBC driver name
         },
     }
 }
