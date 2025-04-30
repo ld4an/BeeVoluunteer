@@ -36,7 +36,7 @@ def login_view(request):
             return redirect('login')
         if check_password(password, user.password):  # Check password against hashed one
             request.session['user_id'] = user.id
-            messages.success(request, 'Logged in successfully!')
+           # messages.success(request, 'Logged in successfully!')
             if user.role == 'volunteer':
                 return redirect('volunteer_homepage')  # Or wherever
             elif user.role == 'organizer':
@@ -154,8 +154,10 @@ def organization_homepage_view(request):
 
 
 
+
 def account_view(request):
     user_id = request.session.get('user_id')
+
     if not user_id:
         messages.error(request, "Session expired, please login again.")
         return redirect('login')
@@ -254,7 +256,6 @@ from BeeVolunteer.models import User
 @never_cache
 def update_settings(request):
     user_id = request.session.get('user_id')
-
     if not user_id:
         messages.error(request, "Session expired, please login again.")
         return redirect('login')
@@ -265,6 +266,8 @@ def update_settings(request):
         messages.error(request, "Invalid user or access denied.")
         return redirect('login')
 
+    error_password_mismatch = False
+
     if request.method == 'POST':
         email = request.POST.get('email', '')
         password = request.POST.get('password', '')
@@ -274,15 +277,18 @@ def update_settings(request):
 
         if password:
             if password != confirm_password:
-                messages.error(request, "Passwords do not match.")
-                return redirect('settings')
-            user.password = make_password(password)
+                error_password_mismatch = True
+            else:
+                user.password = make_password(password)
 
         if user.role == 'volunteer':
             full_name = request.POST.get('username', '')
+            phone = request.POST.get('phone', '')
             name_parts = full_name.strip().split(' ', 1)
             user.first_name = name_parts[0]
             user.last_name = name_parts[1] if len(name_parts) > 1 else ''
+            user.phone = phone
+
         elif user.role == 'organizer' and user.organization:
             org = user.organization
             org.name = request.POST.get('org_name', org.name)
@@ -291,20 +297,20 @@ def update_settings(request):
             org.website = request.POST.get('website', org.website)
             org.save()
 
-        user.save()
-        messages.success(request, "Account settings updated successfully.")
+        if not error_password_mismatch:
+            user.save()
+            messages.success(request, "Account settings updated successfully.")
 
     user_role = user.role
-    user_name = f"{user.first_name} {user.last_name}" if user.role == 'volunteer' else user.organization.name
-    organization_name = user.organization.name if user.role == 'organizer' and user.organization else None
+    user_name = f"{user.first_name} {user.last_name}" if user_role == 'volunteer' else user.organization.name
+    organization_name = user.organization.name if user_role == 'organizer' and user.organization else None
 
     return render(request, 'pages/account.html', {
         'user': user,
         'user_role': user_role,
         'user_name': user_name,
-        'organization_name': organization_name
+        'organization_name': organization_name,
+        'error_password_mismatch': error_password_mismatch
     })
-
-
 
 # Create your views here.
