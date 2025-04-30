@@ -1,18 +1,30 @@
+import datetime
+
 from django.shortcuts import render, redirect
 from django.contrib import messages
 #|Ignora eroarea asta, Django e ***** si o ia din "BeeV.." cu cerc (package), nu de la radacina
-#v
-from BeeVolunteer.models import User, Organization
+from BeeVolunteer.models import User, Organization, Event
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.hashers import check_password
 
 
+def home(request):
+    return render(request, 'pages/root-home_page.html')
 def index(request):
     """The home page for BeeVolunteer."""
     return render(request, 'pages/login.html')
 
-
 def login_view(request):
+    if request.session.get('user_id'):
+        try:
+            user = User.objects.get(id=request.session['user_id'])
+            if user.role == 'volunteer':
+                return redirect('volunteer_homepage')
+            elif user.role == 'organizer':
+                return redirect('organization_homepage')
+        except User.DoesNotExist:
+            pass  # if user not found, allow to continue to login page
+
     if request.method == 'POST':
         email = request.POST.get('email')
         password = request.POST.get('password')
@@ -27,13 +39,12 @@ def login_view(request):
             messages.success(request, 'Logged in successfully!')
             if user.role == 'volunteer':
                 return redirect('volunteer_homepage')  # Or wherever
-            if user.role == 'organizer':
+            elif user.role == 'organizer':
                 return redirect('organization_homepage')
         else:
             messages.error(request, 'Incorrect password.')
             return redirect('login')
     return render(request, 'pages/login.html')
-
 
 def register_view(request):
     if request.method == 'POST':
@@ -108,47 +119,10 @@ def password_reset(request):
 
     return render(request, 'pages/reset_password.html')
 
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.views.decorators.cache import never_cache
-from BeeVolunteer.models import User
 
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.views.decorators.cache import never_cache
-from BeeVolunteer.models import User
-
-"""
-@never_cache
-def homepage_view(request):
-    # Get the user ID from the session
+def volunteer_homepage_view(request):
     user_id = request.session.get('user_id')
 
-    # If there's no session, redirect to login with a message
-    if not user_id:
-        messages.error(request, "Your session has expired. Please log in again.")
-        return redirect('login')
-
-    try:
-        # Retrieve the logged-in user from the database
-        user = User.objects.get(id=user_id)
-        user_name = f"{user.first_name} {user.last_name}"
-    except User.DoesNotExist:
-        messages.error(request, "Invalid session. Please log in again.")
-        return redirect('login')
-
-    # Render the homepage with the user's name and both action buttons visible
-    return render(request, 'pages/homepage.html', {
-        'user_name': user_name,
-        'show_volunteer_button': True,
-        'show_organizer_button': True,
-    })
-
-"""
-
-@never_cache
-def homepage_volunteer_view(request):
-    user_id = request.session.get('user_id')
     if not user_id:
         messages.error(request, "Session expired, please login again.")
         return redirect('login')
@@ -160,12 +134,11 @@ def homepage_volunteer_view(request):
         messages.error(request, "Invalid user or access denied.")
         return redirect('login')
 
-    return render(request, 'pages/volunteer_homepage.html', {'user_name': user_name})
+    return render(request, 'pages/homepage_volunteers.html', {'user_name': user_name})
 
-
-@never_cache
-def homepage_organization_view(request):
+def organization_homepage_view(request):
     user_id = request.session.get('user_id')
+
     if not user_id:
         messages.error(request, "Session expired, please login again.")
         return redirect('login')
@@ -177,21 +150,161 @@ def homepage_organization_view(request):
         messages.error(request, "Invalid user or access denied.")
         return redirect('login')
 
-    return render(request, 'pages/organization_homepage.html', {'organization_name': organization_name})
+    return render(request, 'pages/homepage_organization.html', {'organization_name': organization_name})
+
 
 
 def account_view(request):
-    return render(request, 'pages/account.html')
+    user_id = request.session.get('user_id')
+    if not user_id:
+        messages.error(request, "Session expired, please login again.")
+        return redirect('login')
+
+    try:
+        user = User.objects.select_related('organization').get(id=user_id)
+    except User.DoesNotExist:
+        messages.error(request, "Invalid user or access denied.")
+        return redirect('login')
+
+    user_role = user.role
+    user_name = f"{user.first_name} {user.last_name}" if user_role == 'volunteer' else user.organization.name
+    organization_name = user.organization.name if user_role == 'organizer' and user.organization else None
+
+    return render(request, 'pages/account.html', {
+        'user': user,
+        'user_role': user_role,
+        'user_name': user_name,
+        'organization_name': organization_name
+    })
 
 def announcements_view(request):
     return render(request,'pages/my_announcements.html')
 
-
-
 def logout_view(request):
     request.session.flush()
-    messages.error(request, "Logged out successfully!")
+    #messages.error(request, "Logged out successfully!")
     return redirect('login')
+
+def add_event(request):
+    user_id = request.session.get('user_id')
+
+    if not user_id:
+        messages.error(request, "Session expired, please login again.")
+        return redirect('login')
+
+    try:
+        user = User.objects.select_related('organization').get(id=user_id)
+    except User.DoesNotExist:
+        messages.error(request, "Invalid user or access denied.")
+        return redirect('login')
+
+    if request.method == 'POST':
+        name = request.POST.get('event_name')
+        description = request.POST.get('description')
+        date_str = request.POST.get('event_date')
+        location = request.POST.get('location')
+        max_volunteers = request.POST.get('volunteer_count')
+
+        # Parse date and time
+        event_datetime = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
+
+        # Find or create a default organization for volunteer-created events
+        default_org, _ = Organization.objects.get_or_create(
+            name="Volunteer Created Events",
+            defaults={
+                'email': 'volunteers@beevent.org',
+                'description': 'Auto-assigned org for events created by volunteers',
+            }
+        )
+
+        # Save event
+        Event.objects.create(
+            name=name,
+            description=description,
+            date=event_datetime,
+            location=location,
+            max_volunteers=max_volunteers,
+            organization=default_org
+        )
+        return redirect('volunteer_homepage')
+    user_role = user.role
+    user_name = f"{user.first_name} {user.last_name}" if user.role == 'volunteer' else user.organization.name
+    organization_name = user.organization.name if user.role == 'organizer' and user.organization else None
+
+    return render(request, 'pages/add-event.html', {
+        'user': user,
+        'user_role': user_role,
+        'user_name': user_name,
+        'organization_name': organization_name
+    })
+
+
+from django.views.decorators.cache import never_cache
+from django.contrib.auth.hashers import make_password
+from django.contrib import messages
+from django.shortcuts import redirect
+from BeeVolunteer.models import User, Organization
+
+from django.views.decorators.cache import never_cache
+from django.contrib.auth.hashers import make_password
+from django.contrib import messages
+from django.shortcuts import redirect, render
+from BeeVolunteer.models import User
+
+@never_cache
+def update_settings(request):
+    user_id = request.session.get('user_id')
+
+    if not user_id:
+        messages.error(request, "Session expired, please login again.")
+        return redirect('login')
+
+    try:
+        user = User.objects.select_related('organization').get(id=user_id)
+    except User.DoesNotExist:
+        messages.error(request, "Invalid user or access denied.")
+        return redirect('login')
+
+    if request.method == 'POST':
+        email = request.POST.get('email', '')
+        password = request.POST.get('password', '')
+        confirm_password = request.POST.get('confirm_password', '')
+
+        user.email = email
+
+        if password:
+            if password != confirm_password:
+                messages.error(request, "Passwords do not match.")
+                return redirect('settings')
+            user.password = make_password(password)
+
+        if user.role == 'volunteer':
+            full_name = request.POST.get('username', '')
+            name_parts = full_name.strip().split(' ', 1)
+            user.first_name = name_parts[0]
+            user.last_name = name_parts[1] if len(name_parts) > 1 else ''
+        elif user.role == 'organizer' and user.organization:
+            org = user.organization
+            org.name = request.POST.get('org_name', org.name)
+            org.description = request.POST.get('org_description', org.description)
+            org.phone = request.POST.get('org_phone', org.phone)
+            org.website = request.POST.get('website', org.website)
+            org.save()
+
+        user.save()
+        messages.success(request, "Account settings updated successfully.")
+
+    user_role = user.role
+    user_name = f"{user.first_name} {user.last_name}" if user.role == 'volunteer' else user.organization.name
+    organization_name = user.organization.name if user.role == 'organizer' and user.organization else None
+
+    return render(request, 'pages/account.html', {
+        'user': user,
+        'user_role': user_role,
+        'user_name': user_name,
+        'organization_name': organization_name
+    })
+
 
 
 # Create your views here.
