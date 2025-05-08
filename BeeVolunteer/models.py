@@ -7,6 +7,7 @@ class Organization(models.Model):
     Represents an organization that manages events and volunteers.
     """
     name = models.CharField(max_length=255, unique=True)
+    #user = models.OneToOneField('User', on_delete=models.CASCADE, null=True, blank=True, related_name='org_profile')
     description = models.TextField(null=True, blank=True)
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=20, null=True, blank=True)
@@ -21,7 +22,9 @@ class Organization(models.Model):
 # ======== User Model ===========
 class User(models.Model):
     """
-    Represents a user who can be a volunteer, admin, or event organizer.
+    Represents a user w
+    
+    ho can be a volunteer, admin, or event organizer.
     """
     ROLE_CHOICES = [
         ('volunteer', 'Volunteer'),  # Regular volunteer
@@ -35,9 +38,7 @@ class User(models.Model):
     password = models.CharField(max_length=255)  # Hashed password for security
     phone = models.CharField(max_length=20, null=True, blank=True)  # Optional phone number
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='volunteer')  # Role selection
-    organization = models.ForeignKey(
-        Organization, on_delete=models.SET_NULL, null=True, blank=True
-    )  # Nullable foreign key linking to an organization
+    organization = models.ForeignKey('Organization', on_delete=models.SET_NULL, null=True, blank=True, related_name='users')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

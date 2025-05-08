@@ -17,4 +17,6 @@ urlpatterns = [
     path('settings/update/', views.update_settings, name='update_settings'),
     path('my-announcements/', announcements_view, name='announcements'),
     path('add-event/', add_event, name='add_event'),
+    path('edit-event/<int:id>/', views.edit_event, name='edit_event'),
+    path('delete-event/<int:id>/', views.delete_event, name='delete_event'),
 ]
