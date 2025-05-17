@@ -352,8 +352,7 @@ def apply_to_event(request, event_id):
     event = get_object_or_404(Event, id=event_id)
 
     # Creează aplicația doar dacă nu există deja
-    EventVolunteer.objects.get_or_create(user=user, event=event)
-
+    EventVolunteer.objects.get_or_create(user=user, event=event, defaults={'status': 'pending'})
     return redirect('volunteer_homepage')
 
 
@@ -375,10 +374,14 @@ def volunteer_dashboard(request):
 
     # Doar evenimente viitoare
     events = Event.objects.filter(date__gte=timezone.now())
-    applied_event_ids = set(EventVolunteer.objects.filter(user=user).values_list('event_id', flat=True))
 
+    # Aplicatii user
+    applications = EventVolunteer.objects.filter(user=user)
+    apps_by_event = {app.event_id: app for app in applications}
+
+    # Adaugă aplicația în fiecare event
     for event in events:
-        event.applied = event.id in applied_event_ids
+        event.application = apps_by_event.get(event.id)
 
     return render(request, 'pages/homepage_volunteers.html', {
         'user_name': f"{user.first_name} {user.last_name}",
