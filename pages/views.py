@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -6,8 +6,7 @@ from django.contrib import messages
 from BeeVolunteer.models import User, Organization, Event
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.hashers import check_password
-
-
+from django.views.decorators.cache import never_cache
 def home(request):
     return render(request, 'pages/root-home_page.html')
 def index(request):
@@ -119,7 +118,7 @@ def password_reset(request):
 
     return render(request, 'pages/reset_password.html')
 
-
+@never_cache
 def volunteer_homepage_view(request):
     user_id = request.session.get('user_id')
 
@@ -136,6 +135,7 @@ def volunteer_homepage_view(request):
 
     return render(request, 'pages/homepage_volunteers.html', {'user_name': user_name})
 
+@never_cache
 def organization_homepage_view(request):
     user_id = request.session.get('user_id')
 
@@ -154,7 +154,7 @@ def organization_homepage_view(request):
 
 
 
-
+@never_cache
 def account_view(request):
     user_id = request.session.get('user_id')
 
@@ -179,14 +179,36 @@ def account_view(request):
         'organization_name': organization_name
     })
 
+@never_cache
 def announcements_view(request):
-    return render(request,'pages/my_announcements.html')
+    user_id = request.session.get('user_id')
+    if not user_id:
+        messages.error(request, "Session expired, please login again.")
+        return redirect('login')
+
+    try:
+        user = User.objects.select_related('organization').get(id=user_id)
+    except User.DoesNotExist:
+        messages.error(request, "Invalid user.")
+        return redirect('login')
+
+    # Afișează DOAR evenimentele create de acest utilizator (nu după organizație!)
+    events = Event.objects.filter(user_id=user.id).order_by('-date')
+
+    # Nume pentru navbar
+    user_name = f"{user.first_name} {user.last_name}" if user.role == 'volunteer' else user.organization.name
+
+    return render(request, 'pages/my_announcements.html', {
+        'events': events,
+        'user_name': user_name
+    })
 
 def logout_view(request):
     request.session.flush()
     #messages.error(request, "Logged out successfully!")
     return redirect('login')
 
+@never_cache
 def add_event(request):
     user_id = request.session.get('user_id')
 
@@ -195,7 +217,7 @@ def add_event(request):
         return redirect('login')
 
     try:
-        user = User.objects.select_related('organization').get(id=user_id)
+        user = User.objects.get(id=user_id)
     except User.DoesNotExist:
         messages.error(request, "Invalid user or access denied.")
         return redirect('login')
@@ -207,31 +229,33 @@ def add_event(request):
         location = request.POST.get('location')
         max_volunteers = request.POST.get('volunteer_count')
 
-        # Parse date and time
-        event_datetime = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
+        # Parsează data
+        try:
+            event_datetime = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
+        except ValueError:
+            messages.error(request, "Invalid date format.")
+            return redirect('add_event')
 
-        # Find or create a default organization for volunteer-created events
-        default_org, _ = Organization.objects.get_or_create(
-            name="Volunteer Created Events",
-            defaults={
-                'email': 'volunteers@beevent.org',
-                'description': 'Auto-assigned org for events created by volunteers',
-            }
-        )
-
-        # Save event
+        # Creează evenimentul fără organizație, doar cu user-ul creator
         Event.objects.create(
             name=name,
             description=description,
             date=event_datetime,
             location=location,
             max_volunteers=max_volunteers,
-            organization=default_org
+            user=user,
+            organization=None  # <- forțăm să fie mereu None
         )
-        return redirect('volunteer_homepage')
+
+        # Redirect în funcție de rol
+        redirect_target = 'organization_homepage' if user.role == 'organizer' else 'volunteer_homepage'
+        messages.success(request, "Event created successfully.")
+        return redirect(redirect_target)
+
+    # Context pentru navbar
     user_role = user.role
-    user_name = f"{user.first_name} {user.last_name}" if user.role == 'volunteer' else user.organization.name
-    organization_name = user.organization.name if user.role == 'organizer' and user.organization else None
+    user_name = f"{user.first_name} {user.last_name}" if user_role == 'volunteer' else user.organization.name
+    organization_name = user.organization.name if user_role == 'organizer' and user.organization else None
 
     return render(request, 'pages/add-event.html', {
         'user': user,
@@ -239,8 +263,6 @@ def add_event(request):
         'user_name': user_name,
         'organization_name': organization_name
     })
-
-
 from django.views.decorators.cache import never_cache
 from django.contrib.auth.hashers import make_password
 from django.contrib import messages
