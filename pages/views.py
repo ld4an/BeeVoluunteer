@@ -3,9 +3,13 @@ import datetime
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.views.decorators.http import require_http_methods
+
 #|Ignora eroarea asta, Django e ***** si o ia din "BeeV.." cu cerc (package), nu de la radacina
-from BeeVolunteer.models import User, Organization, Event
+from BeeVolunteer.models import User, Organization, Event, EventVolunteer
 from django.contrib.auth.hashers import make_password
+from django.utils import timezone
+
 from django.contrib.auth.hashers import check_password
 
 
@@ -123,19 +127,68 @@ def password_reset(request):
 
 def volunteer_homepage_view(request):
     user_id = request.session.get('user_id')
-
     if not user_id:
-        messages.error(request, "Session expired, please login again.")
+        messages.error(request, "Session expired.")
         return redirect('login')
 
     try:
         user = User.objects.get(id=user_id, role='volunteer')
-        user_name = f"{user.first_name} {user.last_name}"
     except User.DoesNotExist:
-        messages.error(request, "Invalid user or access denied.")
+        messages.error(request, "User not found.")
         return redirect('login')
 
-    return render(request, 'pages/homepage_volunteers.html', {'user_name': user_name})
+    applications = EventVolunteer.objects.filter(user=user).select_related('event')
+    applied_event_ids = [app.event.id for app in applications]
+
+    events = list(Event.objects.filter(date__gte=timezone.now(), id__in=applied_event_ids) |
+                  Event.objects.filter(date__gte=timezone.now()).exclude(id__in=applied_event_ids))
+
+    app_map = {app.event.id: app for app in applications}
+    for event in events:
+        event.application = app_map.get(event.id)
+
+    user_name = f"{user.first_name} {user.last_name}"
+    return render(request, 'pages/homepage_volunteers.html', {
+        'user_name': user_name,
+        'events': events
+    })
+    user_id = request.session.get('user_id')
+    if not user_id:
+        messages.error(request, "Session expired.")
+        return redirect('login')
+
+    try:
+        user = User.objects.get(id=user_id, role='volunteer')
+    except User.DoesNotExist:
+        messages.error(request, "User not found.")
+        return redirect('login')
+
+    # Obține TOATE aplicațiile acestui user
+    applications = EventVolunteer.objects.filter(user=user).select_related('event')
+    applied_event_ids = [app.event.id for app in applications]
+
+    # Obține evenimentele viitoare (inclusiv cele aplicate)
+    events = list(Event.objects.filter(date__gte=timezone.now(), id__in=applied_event_ids) |
+                  Event.objects.filter(date__gte=timezone.now()).exclude(id__in=applied_event_ids))
+
+    # Mapează aplicațiile după event.id
+    app_map = {app.event.id: app for app in applications}
+
+    # Injectează aplicația în fiecare event
+    for event in events:
+        event.application = app_map.get(event.id)
+
+    user_name = f"{user.first_name} {user.last_name}"
+    return render(request, 'pages/homepage_volunteers.html', {
+        'user_name': user_name,
+        'events': events
+    })
+
+
+
+
+
+
 
 def organization_homepage_view(request):
     user_id = request.session.get('user_id')
@@ -280,11 +333,13 @@ def update_settings(request):
 
 def edit_event(request, id):
     user_id = request.session.get('user_id')
+
     if not user_id:
         return redirect('login')
 
     user = User.objects.get(id=user_id)
     event = get_object_or_404(Event, id=id, organization=user.organization)
+    applications = EventVolunteer.objects.filter(event=event).select_related('user')
 
     if request.method == 'POST':
         event.name = request.POST.get('event_name')
@@ -299,7 +354,10 @@ def edit_event(request, id):
         event.save()
         return redirect('organization_homepage')
 
-    return render(request, 'pages/edit_event.html', {'event': event})
+    return render(request, 'pages/edit_event.html', {
+        'event': event,
+        'applications': applications
+    })
 
 
 def delete_event(request, id):
@@ -314,3 +372,73 @@ def delete_event(request, id):
         event.delete()
 
     return redirect('organization_homepage')
+
+def apply_to_event(request, event_id):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        messages.error(request, "You must be logged in to apply.")
+        return redirect('login')
+
+    user = get_object_or_404(User, id=user_id)
+    event = get_object_or_404(Event, id=event_id)
+
+    application, created = EventVolunteer.objects.get_or_create(
+        user=user,
+        event=event,
+        defaults={'status': 'pending'}
+    )
+
+    # Mesaj pentru confirmare
+    if created:
+        messages.success(request, "You successfully applied.")
+    else:
+        messages.info(request, "You already applied.")
+
+    return redirect('volunteer_homepage')
+
+
+
+
+
+from django.utils import timezone
+from django.contrib import messages
+from django.shortcuts import render, redirect
+
+def volunteer_dashboard(request):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        messages.error(request, "Session expired.")
+        return redirect('login')
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        messages.error(request, "User not found.")
+        return redirect('login')
+
+    # Doar evenimente viitoare
+    events = Event.objects.filter(date__gte=timezone.now())
+    applied_event_ids = set(EventVolunteer.objects.filter(user=user).values_list('event_id', flat=True))
+
+    for event in events:
+        event.applied = event.id in applied_event_ids
+
+    return render(request, 'pages/homepage_volunteers.html', {
+        'user_name': f"{user.first_name} {user.last_name}",
+        'events': events
+    })
+
+@require_http_methods(["POST"])
+def update_application_status(request, app_id, status):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return redirect('login')
+
+    app = get_object_or_404(EventVolunteer, id=app_id)
+    if status in ['accepted', 'rejected']:
+        app.status = status
+        app.save()
+    return redirect('edit_event', id=app.event.id)
+
+
+
