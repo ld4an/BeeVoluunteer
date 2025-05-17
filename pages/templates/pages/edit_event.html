@@ -41,6 +41,8 @@
     <thead>
         <tr>
             <th>Volunteer</th>
+            <th>Email</th>
+            <th>Phone</th>
             <th>Status</th>
             <th>Actions</th>
         </tr>
@@ -49,6 +51,8 @@
         {% for app in applications %}
         <tr>
             <td>{{ app.user.first_name }} {{ app.user.last_name }}</td>
+            <td>{{ app.user.email }}</td>
+            <td>{{ app.user.phone|default:"-" }}</td>
             <td>
                 <span class="badge
                     {% if app.status == 'accepted' %}bg-success

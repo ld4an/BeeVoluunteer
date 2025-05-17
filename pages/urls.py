@@ -20,8 +20,8 @@ urlpatterns = [
     path('add-event/', add_event, name='add_event'),
     path('edit-event/<int:id>/', views.edit_event, name='edit_event'),
     path('delete-event/<int:id>/', views.delete_event, name='delete_event'),
-    path('apply/<int:event_id>/', views.apply_to_event, name='apply_to_event'),
-    path('volunteer-dashboard/', volunteer_dashboard, name='volunteer_homepage'),
+    path('event/<int:event_id>/apply/', views.apply_to_event, name='apply_to_event'),
+    path("volunteer-dashboard/", views.volunteer_dashboard, name="volunteer_dashboard"),
     path('update-application/<int:app_id>/<str:status>/', views.update_application_status, name='update_application_status'),
 
 ]

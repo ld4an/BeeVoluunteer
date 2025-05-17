@@ -47,6 +47,7 @@
             <th>Date</th>
             <th>Location</th>
             <th>Organizer</th>
+            <th><strong>Description</strong></th>
             <th>Status</th>
             <th>Apply</th>
         </tr>
@@ -58,6 +59,7 @@
             <td>{{ event.date|date:"Y-m-d H:i" }}</td>
             <td>{{ event.location }}</td>
             <td>{{ event.organization.name }}</td>
+            <td>{{ event.description|default:"-" }}</td>
             <td>
                 {% if event.application %}
                 {% if event.application.status == 'accepted' %}
