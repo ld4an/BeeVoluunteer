@@ -73,11 +73,13 @@ class EventVolunteer(models.Model):
         ('pending', 'Pending'),  # Waiting for confirmation
         ('confirmed', 'Confirmed'),  # Approved to participate
         ('canceled', 'Canceled'),  # Canceled participation
+        ('accepted', 'Accepted'),
+        ('rejected', 'Rejected'),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)  # Volunteer participating
     event = models.ForeignKey(Event, on_delete=models.CASCADE)  # Event linked to the volunteer
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')  # Status of the participation
+    status = models.CharField(max_length=21, choices=STATUS_CHOICES, default='pending')  # Status of the participation
     created_at = models.DateTimeField(auto_now_add=True)  # Timestamp when the record was created
 
     class Meta:

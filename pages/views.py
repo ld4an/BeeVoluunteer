@@ -4,8 +4,10 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 #|Ignora eroarea asta, Django e ***** si o ia din "BeeV.." cu cerc (package), nu de la radacina
-from BeeVolunteer.models import User, Organization, Event
+from BeeVolunteer.models import User, Organization, Event, EventVolunteer
 from django.contrib.auth.hashers import make_password
+from django.utils import timezone
+
 from django.contrib.auth.hashers import check_password
 
 
@@ -121,6 +123,7 @@ def password_reset(request):
     return render(request, 'pages/reset_password.html')
 
 
+
 def volunteer_homepage_view(request):
     user_id = request.session.get('user_id')
 
@@ -135,7 +138,21 @@ def volunteer_homepage_view(request):
         messages.error(request, "Invalid user or access denied.")
         return redirect('login')
 
-    return render(request, 'pages/homepage_volunteers.html', {'user_name': user_name})
+    # Toate evenimentele viitoare
+    events = Event.objects.filter(date__gte=timezone.now())
+
+    # Aplicațiile acestui utilizator
+    applications = EventVolunteer.objects.filter(user=user)
+    apps_by_event = {app.event_id: app for app in applications}
+
+    # Adaugă aplicația (cu statusul ei) la fiecare eveniment
+    for event in events:
+        event.application = apps_by_event.get(event.id)
+
+    return render(request, 'pages/homepage_volunteers.html', {
+        'user_name': user_name,
+        'events': events
+    })
 
 def organization_homepage_view(request):
     user_id = request.session.get('user_id')
@@ -280,11 +297,13 @@ def update_settings(request):
 
 def edit_event(request, id):
     user_id = request.session.get('user_id')
+
     if not user_id:
         return redirect('login')
 
     user = User.objects.get(id=user_id)
     event = get_object_or_404(Event, id=id, organization=user.organization)
+    applications = EventVolunteer.objects.filter(event=event).select_related('user')
 
     if request.method == 'POST':
         event.name = request.POST.get('event_name')
@@ -299,7 +318,10 @@ def edit_event(request, id):
         event.save()
         return redirect('organization_homepage')
 
-    return render(request, 'pages/edit_event.html', {'event': event})
+    return render(request, 'pages/edit_event.html', {
+        'event': event,
+        'applications': applications
+    })
 
 
 def delete_event(request, id):
@@ -314,4 +336,64 @@ def delete_event(request, id):
         event.delete()
 
     return redirect('organization_homepage')
+
+def apply_to_event(request, event_id):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        messages.error(request, "You must be logged in to apply.")
+        return redirect('login')
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        messages.error(request, "User not found.")
+        return redirect('login')
+
+    event = get_object_or_404(Event, id=event_id)
+
+    # Creează aplicația doar dacă nu există deja
+    EventVolunteer.objects.get_or_create(user=user, event=event)
+
+    return redirect('volunteer_homepage')
+
+
+from django.utils import timezone
+from django.contrib import messages
+from django.shortcuts import render, redirect
+
+def volunteer_dashboard(request):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        messages.error(request, "Session expired.")
+        return redirect('login')
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        messages.error(request, "User not found.")
+        return redirect('login')
+
+    # Doar evenimente viitoare
+    events = Event.objects.filter(date__gte=timezone.now())
+    applied_event_ids = set(EventVolunteer.objects.filter(user=user).values_list('event_id', flat=True))
+
+    for event in events:
+        event.applied = event.id in applied_event_ids
+
+    return render(request, 'pages/homepage_volunteers.html', {
+        'user_name': f"{user.first_name} {user.last_name}",
+        'events': events
+    })
+
+def update_application_status(request, app_id, status):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return redirect('login')
+
+    app = get_object_or_404(EventVolunteer, id=app_id)
+    if status in ['accepted', 'rejected']:
+        app.status = status
+        app.save()
+    return redirect('edit_event', id=app.event.id)
+
 

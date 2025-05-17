@@ -36,6 +36,46 @@
             <button type="submit" class="btn btn-primary">Save Changes</button>
         </div>
     </form>
+    <h4 class="mt-5">Applications</h4>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Volunteer</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for app in applications %}
+        <tr>
+            <td>{{ app.user.first_name }} {{ app.user.last_name }}</td>
+            <td>
+                <span class="badge
+                    {% if app.status == 'accepted' %}bg-success
+                    {% elif app.status == 'rejected' %}bg-danger
+                    {% else %}bg-secondary{% endif %}">
+                    {{ app.status }}
+                </span>
+            </td>
+            <td>
+                {% if app.status != 'accepted' %}
+                <form method="post" action="{% url 'update_application_status' app.id 'accepted' %}" class="d-inline">
+                    {% csrf_token %}
+                    <button class="btn btn-sm btn-success">Accept</button>
+                </form>
+                {% endif %}
+                {% if app.status != 'rejected' %}
+                <form method="post" action="{% url 'update_application_status' app.id 'rejected' %}" class="d-inline">
+                    {% csrf_token %}
+                    <button class="btn btn-sm btn-danger">Reject</button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
 </div>
 </body>
 </html>
