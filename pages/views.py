@@ -314,4 +314,3 @@ def delete_event(request, id):
         event.delete()
 
     return redirect('organization_homepage')
-
