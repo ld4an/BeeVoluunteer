@@ -3,6 +3,7 @@ import datetime
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
 
 #|Ignora eroarea asta, Django e ***** si o ia din "BeeV.." cu cerc (package), nu de la radacina
@@ -124,7 +125,7 @@ def password_reset(request):
 
     return render(request, 'pages/reset_password.html')
 
-
+@never_cache
 def volunteer_homepage_view(request):
     user_id = request.session.get('user_id')
     if not user_id:
@@ -184,12 +185,7 @@ def volunteer_homepage_view(request):
         'events': events
     })
 
-
-
-
-
-
-
+@never_cache
 def organization_homepage_view(request):
     user_id = request.session.get('user_id')
     if not user_id:
@@ -210,6 +206,8 @@ def organization_homepage_view(request):
         'events': events
     })
 
+
+@never_cache
 def account_view(request):
     user_id = request.session.get('user_id')
 
@@ -234,9 +232,29 @@ def account_view(request):
         'organization_name': organization_name
     })
 
-
+@never_cache
 def announcements_view(request):
-    return render(request, 'pages/my_announcements.html')
+    user_id = request.session.get('user_id')
+    if not user_id:
+        messages.error(request, "Session expired, please login again.")
+        return redirect('login')
+
+    try:
+        user = User.objects.select_related('organization').get(id=user_id)
+    except User.DoesNotExist:
+        messages.error(request, "Invalid user.")
+        return redirect('login')
+
+    # Afișează DOAR evenimentele create de acest utilizator (nu după organizație!)
+    events = Event.objects.filter(user_id=user.id).order_by('-date')
+
+    # Nume pentru navbar
+    user_name = f"{user.first_name} {user.last_name}" if user.role == 'volunteer' else user.organization.name
+
+    return render(request, 'pages/my_announcements.html', {
+        'events': events,
+        'user_name': user_name
+    })
 
 
 def logout_view(request):
@@ -252,6 +270,7 @@ def logout_view(request):
     #messages.error(request, "Logged out successfully!")
     return redirect('login')
 
+@never_cache
 def add_event(request):
     if request.method == 'POST':
         name = request.POST.get('event_name')
@@ -297,6 +316,7 @@ def add_event(request):
 
     return render(request, 'pages/add-event.html')
 
+@never_cache
 def update_settings(request):
     if request.method == 'POST':
         user_id = request.session.get('user_id')

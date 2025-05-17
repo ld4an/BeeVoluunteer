@@ -56,9 +56,10 @@ class Event(models.Model):
     date = models.DateTimeField()  # Scheduled date and time
     location = models.CharField(max_length=255)  # Physical or online location
     max_volunteers = models.IntegerField(null=True, blank=True)  # Optional volunteer limit
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)  # Event belongs to an organization
+    organization = models.ForeignKey(Organization, null=True, blank=True, on_delete=models.CASCADE)  # Event belongs to an organization
     created_at = models.DateTimeField(auto_now_add=True)  # Timestamp when created
     updated_at = models.DateTimeField(auto_now=True)  # Auto-updated timestamp
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
 
     class Meta:
         db_table = "events"
