@@ -1,21 +1,19 @@
-from datetime import datetime
+import datetime
 
-# |Ignora eroarea asta, Django e ***** si o ia din "BeeV.." cu cerc (package), nu de la radacina
-from BeeVolunteer.models import User, Organization, Event
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.contrib.auth.hashers import check_password
+#|Ignora eroarea asta, Django e ***** si o ia din "BeeV.." cu cerc (package), nu de la radacina
+from BeeVolunteer.models import User, Organization, Event
 from django.contrib.auth.hashers import make_password
-from django.shortcuts import render, redirect
+from django.contrib.auth.hashers import check_password
 
 
-# THE VERY FIRST HOMEPAGE OF THE WEBSITE...
 def home(request):
     return render(request, 'pages/root-home_page.html')
-
 def index(request):
     """The home page for BeeVolunteer."""
     return render(request, 'pages/login.html')
-
 
 def login_view(request):
     if request.session.get('user_id'):
@@ -48,7 +46,6 @@ def login_view(request):
             messages.error(request, 'Incorrect password.')
             return redirect('login')
     return render(request, 'pages/login.html')
-
 
 def register_view(request):
     if request.method == 'POST':
@@ -142,37 +139,110 @@ def volunteer_homepage_view(request):
 
 def organization_homepage_view(request):
     user_id = request.session.get('user_id')
+    if not user_id:
+        messages.error(request, "Session expired.")
+        return redirect('login')
+
+    try:
+        user = User.objects.get(id=user_id, role='organizer')
+        organization = user.organization
+        events = Event.objects.filter(organization=organization)  # <- IMPORTANT
+    except User.DoesNotExist:
+        messages.error(request, "Invalid user.")
+        return redirect('login')
+
+    return render(request, 'pages/homepage_organization.html', {
+        'organization_name': organization.name,
+        'user_name': organization.name,
+        'events': events
+    })
+
+def account_view(request):
+    user_id = request.session.get('user_id')
 
     if not user_id:
         messages.error(request, "Session expired, please login again.")
         return redirect('login')
 
     try:
-        user = User.objects.get(id=user_id, role='organizer')
-        organization_name = user.organization.name if user.organization else "Organization"
+        user = User.objects.select_related('organization').get(id=user_id)
     except User.DoesNotExist:
         messages.error(request, "Invalid user or access denied.")
         return redirect('login')
 
-    return render(request, 'pages/homepage_organization.html', {'organization_name': organization_name})
-
-
-def account_view(request):
-    user_id = request.session.get('user_id')
-    user_name = "Utilizator"
-    user = None
-
-    if user_id:
-        try:
-            user = User.objects.get(id=user_id)
-            user_name = f"{user.first_name} {user.last_name}"
-        except User.DoesNotExist:
-            pass
+    user_role = user.role
+    user_name = f"{user.first_name} {user.last_name}" if user_role == 'volunteer' else user.organization.name
+    organization_name = user.organization.name if user_role == 'organizer' and user.organization else None
 
     return render(request, 'pages/account.html', {
-        'user_name': user_name,
         'user': user,
+        'user_role': user_role,
+        'user_name': user_name,
+        'organization_name': organization_name
     })
+
+
+def announcements_view(request):
+    return render(request, 'pages/my_announcements.html')
+
+
+def logout_view(request):
+    request.session.flush()
+    # messages.error(request, "Logged out successfully!")
+    return redirect('login')
+
+def announcements_view(request):
+    return render(request,'pages/my_announcements.html')
+
+def logout_view(request):
+    request.session.flush()
+    #messages.error(request, "Logged out successfully!")
+    return redirect('login')
+
+def add_event(request):
+    if request.method == 'POST':
+        name = request.POST.get('event_name')
+        description = request.POST.get('description')
+        date_str = request.POST.get('event_date')
+        location = request.POST.get('location')
+        max_volunteers = request.POST.get('volunteer_count')
+
+        # Parse date and time
+        event_datetime = datetime.datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
+
+        # Obține utilizatorul logat
+        user_id = request.session.get('user_id')
+        user = User.objects.get(id=user_id)
+
+        # Determină organizația care va fi atribuită evenimentului
+        if user.role == 'organizer' and user.organization:
+            event_org = user.organization
+        else:
+            # Fallback pentru voluntari
+            event_org, _ = Organization.objects.get_or_create(
+                name="Volunteer Created Events",
+                defaults={
+                    'email': 'volunteers@beevent.org',
+                    'description': 'Auto-assigned org for events created by volunteers',
+                }
+            )
+
+        # Creează evenimentul
+        Event.objects.create(
+            name=name,
+            description=description,
+            date=event_datetime,
+            location=location,
+            max_volunteers=max_volunteers,
+            organization=event_org
+        )
+
+        # Redirecționează în funcție de tipul userului
+        if user.role == 'organizer':
+            return redirect('organization_homepage')
+        return redirect('volunteer_homepage')
+
+    return render(request, 'pages/add-event.html')
 
 def update_settings(request):
     if request.method == 'POST':
@@ -207,46 +277,41 @@ def update_settings(request):
         messages.success(request, "Account settings updated successfully.")
         return redirect('settings')
 
-def announcements_view(request):
-    return render(request,'pages/my_announcements.html')
 
-def logout_view(request):
-    request.session.flush()
-    #messages.error(request, "Logged out successfully!")
-    return redirect('login')
+def edit_event(request, id):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return redirect('login')
 
-def add_event(request):
+    user = User.objects.get(id=user_id)
+    event = get_object_or_404(Event, id=id, organization=user.organization)
+
     if request.method == 'POST':
-        name = request.POST.get('event_name')
-        description = request.POST.get('description')
+        event.name = request.POST.get('event_name')
+        event.description = request.POST.get('description')
+        event.location = request.POST.get('location')
+        event.max_volunteers = request.POST.get('volunteer_count')
+
         date_str = request.POST.get('event_date')
-        location = request.POST.get('location')
-        max_volunteers = request.POST.get('volunteer_count')
+        from datetime import datetime
+        event.date = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
 
-        # Parse date and time
-        event_datetime = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
+        event.save()
+        return redirect('organization_homepage')
 
-        # Find or create a default organization for volunteer-created events
-        default_org, _ = Organization.objects.get_or_create(
-            name="Volunteer Created Events",
-            defaults={
-                'email': 'volunteers@beevent.org',
-                'description': 'Auto-assigned org for events created by volunteers',
-            }
-        )
-
-        # Save event
-        Event.objects.create(
-            name=name,
-            description=description,
-            date=event_datetime,
-            location=location,
-            max_volunteers=max_volunteers,
-            organization=default_org
-        )
-        return redirect('volunteer_homepage')
-
-    return render(request, 'pages/add-event.html')
+    return render(request, 'pages/edit_event.html', {'event': event})
 
 
-# Create your views here.
+def delete_event(request, id):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return redirect('login')
+
+    user = User.objects.get(id=user_id)
+    event = get_object_or_404(Event, id=id, organization=user.organization)
+
+    if request.method == 'POST':
+        event.delete()
+
+    return redirect('organization_homepage')
+
