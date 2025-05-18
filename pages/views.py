@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
@@ -141,8 +141,8 @@ def volunteer_homepage_view(request):
     applications = EventVolunteer.objects.filter(user=user).select_related('event')
     applied_event_ids = [app.event.id for app in applications]
 
-    events = list(Event.objects.filter(date__gte=timezone.now(), id__in=applied_event_ids) |
-                  Event.objects.filter(date__gte=timezone.now()).exclude(id__in=applied_event_ids))
+    events = list(Event.objects.filter(date__gte=timezone.now(), is_active=True, id__in=applied_event_ids) |
+                  Event.objects.filter(date__gte=timezone.now(), is_active=True).exclude(id__in=applied_event_ids))
 
     app_map = {app.event.id: app for app in applications}
     for event in events:
@@ -195,7 +195,7 @@ def organization_homepage_view(request):
     try:
         user = User.objects.get(id=user_id, role='organizer')
         organization = user.organization
-        events = Event.objects.filter(organization=organization)  # <- IMPORTANT
+        events = Event.objects.filter(organization=organization, is_active=True)  # <- IMPORTANT
     except User.DoesNotExist:
         messages.error(request, "Invalid user.")
         return redirect('login')
@@ -259,14 +259,6 @@ def announcements_view(request):
 
 def logout_view(request):
     request.session.flush()
-    # messages.error(request, "Logged out successfully!")
-    return redirect('login')
-
-def announcements_view(request):
-    return render(request,'pages/my_announcements.html')
-
-def logout_view(request):
-    request.session.flush()
     #messages.error(request, "Logged out successfully!")
     return redirect('login')
 
@@ -280,17 +272,22 @@ def add_event(request):
         max_volunteers = request.POST.get('volunteer_count')
 
         # Parse date and time
-        event_datetime = datetime.datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
+        from datetime import datetime
+        try:
+            event_datetime = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
+        except ValueError:
+            messages.error(request, "Invalid date format.")
+            return redirect('add_event')
 
         # Obține utilizatorul logat
         user_id = request.session.get('user_id')
         user = User.objects.get(id=user_id)
 
-        # Determină organizația care va fi atribuită evenimentului
+        # Determină organizația
         if user.role == 'organizer' and user.organization:
             event_org = user.organization
         else:
-            # Fallback pentru voluntari
+            # fallback pentru voluntari
             event_org, _ = Organization.objects.get_or_create(
                 name="Volunteer Created Events",
                 defaults={
@@ -299,22 +296,33 @@ def add_event(request):
                 }
             )
 
-        # Creează evenimentul
+        # Creează evenimentul cu organizație și utilizator
         Event.objects.create(
             name=name,
             description=description,
             date=event_datetime,
             location=location,
             max_volunteers=max_volunteers,
-            organization=event_org
+            organization=event_org,
+            user=user  # <- cheia!
         )
 
-        # Redirecționează în funcție de tipul userului
-        if user.role == 'organizer':
-            return redirect('organization_homepage')
-        return redirect('volunteer_homepage')
+        # Redirecționează în funcție de rol
+        return redirect('organization_homepage' if user.role == 'organizer' else 'volunteer_homepage')
 
-    return render(request, 'pages/add-event.html')
+    # GET
+    user_id = request.session.get('user_id')
+    user = User.objects.get(id=user_id)
+    user_role = user.role
+    user_name = f"{user.first_name} {user.last_name}" if user_role == 'volunteer' else user.organization.name
+    organization_name = user.organization.name if user_role == 'organizer' and user.organization else None
+
+    return render(request, 'pages/add-event.html', {
+        'user': user,
+        'user_role': user_role,
+        'user_name': user_name,
+        'organization_name': organization_name
+    })
 
 @never_cache
 def update_settings(request):
@@ -389,7 +397,8 @@ def delete_event(request, id):
     event = get_object_or_404(Event, id=id, organization=user.organization)
 
     if request.method == 'POST':
-        event.delete()
+        event.is_active = False
+        event.save()
 
     return redirect('organization_homepage')
 
@@ -402,19 +411,24 @@ def apply_to_event(request, event_id):
     user = get_object_or_404(User, id=user_id)
     event = get_object_or_404(Event, id=event_id)
 
+    # NU permite aplicarea la evenimente inactive
+    if not event.is_active:
+        messages.error(request, "You cannot apply to an inactive event.")
+        return redirect('volunteer_homepage')
+
     application, created = EventVolunteer.objects.get_or_create(
         user=user,
         event=event,
         defaults={'status': 'pending'}
     )
 
-    # Mesaj pentru confirmare
     if created:
         messages.success(request, "You successfully applied.")
     else:
         messages.info(request, "You already applied.")
 
     return redirect('volunteer_homepage')
+
 
 
 

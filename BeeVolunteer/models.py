@@ -60,6 +60,7 @@ class Event(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)  # Timestamp when created
     updated_at = models.DateTimeField(auto_now=True)  # Auto-updated timestamp
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         db_table = "events"
