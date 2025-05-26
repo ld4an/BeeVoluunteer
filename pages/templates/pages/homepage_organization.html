@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,6 +6,9 @@
     <title>Home | BeeVolunteer</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <link rel="stylesheet" href="{% static 'style/homepage_organizations.css' %}">
+
 </head>
 <body>
 
@@ -29,7 +33,7 @@
 <!-- Main content -->
 <div class="container mt-5 text-center">
     <h1 class="mb-4">Welcome, {{ organization_name|default:"Organization" }}!</h1>
-    <p class="lead">What would you like to do?</p>
+    <p class="lead">Let's collect some volunteers!</p>
 
     <div class="d-grid gap-3 col-6 mx-auto">
         <a href="/add-event/" class="btn btn-primary btn-lg">
@@ -37,6 +41,8 @@
         </a>
     </div>
 </div>
+
+<img src="{% static 'images/earth_volunteers.jpg' %}" alt="national_volunteers" class="national_volunteers-image">
 
 </body>
 </html>

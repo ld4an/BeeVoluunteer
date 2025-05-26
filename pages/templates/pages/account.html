@@ -35,7 +35,12 @@
 
 <!-- Main content -->
 <div class="container mt-5">
-    <h2 class="mb-4">Account Settings</h2>
+
+    <div class="d-flex align-items-center justify-content-center gap-3 mb-4">
+        <h2 class="mb-4">Account Settings</h2>
+        <img src="{% static 'images/settings.png' %}" alt="account_settings" class="account_settings-image">
+    </div>
+
 
     {% if messages %}
         {% for message in messages %}
@@ -116,8 +121,6 @@
     }, 4000);
 </script>
 
-
-<img src="{% static 'images/settings.png' %}" alt="account_settings" class="account_settings-image">
 
 </body>
 </html>

@@ -123,13 +123,14 @@
 }
 
 .account_settings-image {
-    width: 80px; /* or 60px if you want it smaller */
+    width: 50px;
     height: auto;
-
-    position: relative;
-    bottom: 720px;
-    left: 1100px;
-
-    margin-bottom: 1rem;
+    margin-left: 0.5rem;
+    transition: transform 0.3s ease;
 }
+
+.account_settings-image:hover {
+    transform: scale(1.1) rotate(-5deg);
+}
+
 
