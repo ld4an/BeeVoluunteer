@@ -40,6 +40,16 @@
                         <h5 class="mb-0">Create a New Volunteer Event</h5>
                     </div>
                     <div class="card-body">
+                        {% if messages %}
+                            <div class="mb-3">
+                                {% for message in messages %}
+                                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
 
                         <form method="POST" action="{% url 'add_event' %}">
                             {% csrf_token %}
@@ -56,7 +66,8 @@
 
                             <div class="mb-3">
                                 <label for="event_date" class="form-label">Event Date</label>
-                                <input type="datetime-local" class="form-control" id="event_date" name="event_date" required>
+
+                                <input type="datetime-local" class="form-control" id="event_date" name="event_date" required min="{{ current_time }}">
                             </div>
 
                             <div class="mb-3">
