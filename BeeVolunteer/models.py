@@ -7,6 +7,7 @@ class Organization(models.Model):
     Represents an organization that manages events and volunteers.
     """
     name = models.CharField(max_length=255, unique=True)
+    #user = models.OneToOneField('User', on_delete=models.CASCADE, null=True, blank=True, related_name='org_profile')
     description = models.TextField(null=True, blank=True)
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=20, null=True, blank=True)
@@ -21,7 +22,9 @@ class Organization(models.Model):
 # ======== User Model ===========
 class User(models.Model):
     """
-    Represents a user who can be a volunteer, admin, or event organizer.
+    Represents a user w
+    
+    ho can be a volunteer, admin, or event organizer.
     """
     ROLE_CHOICES = [
         ('volunteer', 'Volunteer'),  # Regular volunteer
@@ -35,9 +38,7 @@ class User(models.Model):
     password = models.CharField(max_length=255)  # Hashed password for security
     phone = models.CharField(max_length=20, null=True, blank=True)  # Optional phone number
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='volunteer')  # Role selection
-    organization = models.ForeignKey(
-        Organization, on_delete=models.SET_NULL, null=True, blank=True
-    )  # Nullable foreign key linking to an organization
+    organization = models.ForeignKey('Organization', on_delete=models.SET_NULL, null=True, blank=True, related_name='users')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -55,10 +56,11 @@ class Event(models.Model):
     date = models.DateTimeField()  # Scheduled date and time
     location = models.CharField(max_length=255)  # Physical or online location
     max_volunteers = models.IntegerField(null=True, blank=True)  # Optional volunteer limit
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)  # Event belongs to an organization
-    user = models.ForeignKey(User, on_delete=models.CASCADE)  # Event organized by a user
+    organization = models.ForeignKey(Organization, null=True, blank=True, on_delete=models.CASCADE)  # Event belongs to an organization
     created_at = models.DateTimeField(auto_now_add=True)  # Timestamp when created
     updated_at = models.DateTimeField(auto_now=True)  # Auto-updated timestamp
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         db_table = "events"
@@ -73,11 +75,13 @@ class EventVolunteer(models.Model):
         ('pending', 'Pending'),  # Waiting for confirmation
         ('confirmed', 'Confirmed'),  # Approved to participate
         ('canceled', 'Canceled'),  # Canceled participation
+        ('accepted', 'Accepted'),
+        ('rejected', 'Rejected'),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)  # Volunteer participating
     event = models.ForeignKey(Event, on_delete=models.CASCADE)  # Event linked to the volunteer
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')  # Status of the participation
+    status = models.CharField(max_length=21, choices=STATUS_CHOICES, default='pending')  # Status of the participation
     created_at = models.DateTimeField(auto_now_add=True)  # Timestamp when the record was created
 
     class Meta:

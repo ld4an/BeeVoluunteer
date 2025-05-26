@@ -1,12 +1,19 @@
 from datetime import datetime
 
-from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-#|Ignora eroarea asta, Django e ***** si o ia din "BeeV.." cu cerc (package), nu de la radacina
-from BeeVolunteer.models import User, Organization, Event
-from django.contrib.auth.hashers import make_password
-from django.contrib.auth.hashers import check_password
 from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_http_methods
+
+#|Ignora eroarea asta, Django e ***** si o ia din "BeeV.." cu cerc (package), nu de la radacina
+from BeeVolunteer.models import User, Organization, Event, EventVolunteer
+from django.contrib.auth.hashers import make_password
+from django.utils import timezone
+
+from django.contrib.auth.hashers import check_password
+
+
 def home(request):
     return render(request, 'pages/root-home_page.html')
 def index(request):
@@ -35,7 +42,7 @@ def login_view(request):
             return redirect('login')
         if check_password(password, user.password):  # Check password against hashed one
             request.session['user_id'] = user.id
-           # messages.success(request, 'Logged in successfully!')
+            messages.success(request, 'Logged in successfully!')
             if user.role == 'volunteer':
                 return redirect('volunteer_homepage')  # Or wherever
             elif user.role == 'organizer':
@@ -121,37 +128,83 @@ def password_reset(request):
 @never_cache
 def volunteer_homepage_view(request):
     user_id = request.session.get('user_id')
-
     if not user_id:
-        messages.error(request, "Session expired, please login again.")
+        messages.error(request, "Session expired.")
         return redirect('login')
 
     try:
         user = User.objects.get(id=user_id, role='volunteer')
-        user_name = f"{user.first_name} {user.last_name}"
     except User.DoesNotExist:
-        messages.error(request, "Invalid user or access denied.")
+        messages.error(request, "User not found.")
         return redirect('login')
 
-    return render(request, 'pages/homepage_volunteers.html', {'user_name': user_name})
+    applications = EventVolunteer.objects.filter(user=user).select_related('event')
+    applied_event_ids = [app.event.id for app in applications]
+
+    events = list(Event.objects.filter(date__gte=timezone.now(), is_active=True, id__in=applied_event_ids) |
+                  Event.objects.filter(date__gte=timezone.now(), is_active=True).exclude(id__in=applied_event_ids))
+
+    app_map = {app.event.id: app for app in applications}
+    for event in events:
+        event.application = app_map.get(event.id)
+
+    user_name = f"{user.first_name} {user.last_name}"
+    return render(request, 'pages/homepage_volunteers.html', {
+        'user_name': user_name,
+        'events': events
+    })
+    user_id = request.session.get('user_id')
+    if not user_id:
+        messages.error(request, "Session expired.")
+        return redirect('login')
+
+    try:
+        user = User.objects.get(id=user_id, role='volunteer')
+    except User.DoesNotExist:
+        messages.error(request, "User not found.")
+        return redirect('login')
+
+    # Obține TOATE aplicațiile acestui user
+    applications = EventVolunteer.objects.filter(user=user).select_related('event')
+    applied_event_ids = [app.event.id for app in applications]
+
+    # Obține evenimentele viitoare (inclusiv cele aplicate)
+    events = list(Event.objects.filter(date__gte=timezone.now(), id__in=applied_event_ids) |
+                  Event.objects.filter(date__gte=timezone.now()).exclude(id__in=applied_event_ids))
+
+    # Mapează aplicațiile după event.id
+    app_map = {app.event.id: app for app in applications}
+
+    # Injectează aplicația în fiecare event
+    for event in events:
+        event.application = app_map.get(event.id)
+
+    user_name = f"{user.first_name} {user.last_name}"
+    return render(request, 'pages/homepage_volunteers.html', {
+        'user_name': user_name,
+        'events': events
+    })
 
 @never_cache
 def organization_homepage_view(request):
     user_id = request.session.get('user_id')
-
     if not user_id:
-        messages.error(request, "Session expired, please login again.")
+        messages.error(request, "Session expired.")
         return redirect('login')
 
     try:
         user = User.objects.get(id=user_id, role='organizer')
-        organization_name = user.organization.name if user.organization else "Organization"
+        organization = user.organization
+        events = Event.objects.filter(organization=organization, is_active=True)  # <- IMPORTANT
     except User.DoesNotExist:
-        messages.error(request, "Invalid user or access denied.")
+        messages.error(request, "Invalid user.")
         return redirect('login')
 
-    return render(request, 'pages/homepage_organization.html', {'organization_name': organization_name})
-
+    return render(request, 'pages/homepage_organization.html', {
+        'organization_name': organization.name,
+        'user_name': organization.name,
+        'events': events
+    })
 
 
 @never_cache
@@ -203,6 +256,7 @@ def announcements_view(request):
         'user_name': user_name
     })
 
+
 def logout_view(request):
     request.session.flush()
     #messages.error(request, "Logged out successfully!")
@@ -210,18 +264,6 @@ def logout_view(request):
 
 @never_cache
 def add_event(request):
-    user_id = request.session.get('user_id')
-
-    if not user_id:
-        messages.error(request, "Session expired, please login again.")
-        return redirect('login')
-
-    try:
-        user = User.objects.get(id=user_id)
-    except User.DoesNotExist:
-        messages.error(request, "Invalid user or access denied.")
-        return redirect('login')
-
     if request.method == 'POST':
         name = request.POST.get('event_name')
         description = request.POST.get('description')
@@ -229,30 +271,48 @@ def add_event(request):
         location = request.POST.get('location')
         max_volunteers = request.POST.get('volunteer_count')
 
-        # Parsează data
+        # Parse date and time
+        from datetime import datetime
         try:
             event_datetime = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
         except ValueError:
             messages.error(request, "Invalid date format.")
             return redirect('add_event')
 
-        # Creează evenimentul fără organizație, doar cu user-ul creator
+        # Obține utilizatorul logat
+        user_id = request.session.get('user_id')
+        user = User.objects.get(id=user_id)
+
+        # Determină organizația
+        if user.role == 'organizer' and user.organization:
+            event_org = user.organization
+        else:
+            # fallback pentru voluntari
+            event_org, _ = Organization.objects.get_or_create(
+                name="Volunteer Created Events",
+                defaults={
+                    'email': 'volunteers@beevent.org',
+                    'description': 'Auto-assigned org for events created by volunteers',
+                }
+            )
+
+        # Creează evenimentul cu organizație și utilizator
         Event.objects.create(
             name=name,
             description=description,
             date=event_datetime,
             location=location,
             max_volunteers=max_volunteers,
-            user=user,
-            organization=None  # <- forțăm să fie mereu None
+            organization=event_org,
+            user=user  # <- cheia!
         )
 
-        # Redirect în funcție de rol
-        redirect_target = 'organization_homepage' if user.role == 'organizer' else 'volunteer_homepage'
-        messages.success(request, "Event created successfully.")
-        return redirect(redirect_target)
+        # Redirecționează în funcție de rol
+        return redirect('organization_homepage' if user.role == 'organizer' else 'volunteer_homepage')
 
-    # Context pentru navbar
+    # GET
+    user_id = request.session.get('user_id')
+    user = User.objects.get(id=user_id)
     user_role = user.role
     user_name = f"{user.first_name} {user.last_name}" if user_role == 'volunteer' else user.organization.name
     organization_name = user.organization.name if user_role == 'organizer' and user.organization else None
@@ -263,76 +323,156 @@ def add_event(request):
         'user_name': user_name,
         'organization_name': organization_name
     })
-from django.views.decorators.cache import never_cache
-from django.contrib.auth.hashers import make_password
-from django.contrib import messages
-from django.shortcuts import redirect
-from BeeVolunteer.models import User, Organization
-
-from django.views.decorators.cache import never_cache
-from django.contrib.auth.hashers import make_password
-from django.contrib import messages
-from django.shortcuts import redirect, render
-from BeeVolunteer.models import User
 
 @never_cache
 def update_settings(request):
-    user_id = request.session.get('user_id')
-    if not user_id:
-        messages.error(request, "Session expired, please login again.")
-        return redirect('login')
-
-    try:
-        user = User.objects.select_related('organization').get(id=user_id)
-    except User.DoesNotExist:
-        messages.error(request, "Invalid user or access denied.")
-        return redirect('login')
-
-    error_password_mismatch = False
-
     if request.method == 'POST':
+        user_id = request.session.get('user_id')
+
+        if not user_id:
+            messages.error(request, "You must be logged in to update your settings.")
+            return redirect('login')
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            messages.error(request, "User not found.")
+            return redirect('login')
+
+        # Get data from the form
+        full_name = request.POST.get('username', '')
         email = request.POST.get('email', '')
         password = request.POST.get('password', '')
-        confirm_password = request.POST.get('confirm_password', '')
+
+        # Split full name into first and last
+        name_parts = full_name.strip().split(' ', 1)
+        user.first_name = name_parts[0]
+        user.last_name = name_parts[1] if len(name_parts) > 1 else ''
 
         user.email = email
 
         if password:
-            if password != confirm_password:
-                error_password_mismatch = True
-            else:
-                user.password = make_password(password)
+            user.password = make_password(password)
 
-        if user.role == 'volunteer':
-            full_name = request.POST.get('username', '')
-            phone = request.POST.get('phone', '')
-            name_parts = full_name.strip().split(' ', 1)
-            user.first_name = name_parts[0]
-            user.last_name = name_parts[1] if len(name_parts) > 1 else ''
-            user.phone = phone
+        user.save()
+        messages.success(request, "Account settings updated successfully.")
+        return redirect('settings')
 
-        elif user.role == 'organizer' and user.organization:
-            org = user.organization
-            org.name = request.POST.get('org_name', org.name)
-            org.description = request.POST.get('org_description', org.description)
-            org.phone = request.POST.get('org_phone', org.phone)
-            org.website = request.POST.get('website', org.website)
-            org.save()
 
-        if not error_password_mismatch:
-            user.save()
-            messages.success(request, "Account settings updated successfully.")
+def edit_event(request, id):
+    user_id = request.session.get('user_id')
 
-    user_role = user.role
-    user_name = f"{user.first_name} {user.last_name}" if user_role == 'volunteer' else user.organization.name
-    organization_name = user.organization.name if user_role == 'organizer' and user.organization else None
+    if not user_id:
+        return redirect('login')
 
-    return render(request, 'pages/account.html', {
-        'user': user,
-        'user_role': user_role,
-        'user_name': user_name,
-        'organization_name': organization_name,
-        'error_password_mismatch': error_password_mismatch
+    user = User.objects.get(id=user_id)
+    event = get_object_or_404(Event, id=id, organization=user.organization)
+    applications = EventVolunteer.objects.filter(event=event).select_related('user')
+
+    if request.method == 'POST':
+        event.name = request.POST.get('event_name')
+        event.description = request.POST.get('description')
+        event.location = request.POST.get('location')
+        event.max_volunteers = request.POST.get('volunteer_count')
+
+        date_str = request.POST.get('event_date')
+        from datetime import datetime
+        event.date = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
+
+        event.save()
+        return redirect('organization_homepage')
+
+    return render(request, 'pages/edit_event.html', {
+        'event': event,
+        'applications': applications
     })
 
-# Create your views here.
+
+def delete_event(request, id):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return redirect('login')
+
+    user = User.objects.get(id=user_id)
+    event = get_object_or_404(Event, id=id, organization=user.organization)
+
+    if request.method == 'POST':
+        event.is_active = False
+        event.save()
+
+    return redirect('organization_homepage')
+
+def apply_to_event(request, event_id):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        messages.error(request, "You must be logged in to apply.")
+        return redirect('login')
+
+    user = get_object_or_404(User, id=user_id)
+    event = get_object_or_404(Event, id=event_id)
+
+    # NU permite aplicarea la evenimente inactive
+    if not event.is_active:
+        messages.error(request, "You cannot apply to an inactive event.")
+        return redirect('volunteer_homepage')
+
+    application, created = EventVolunteer.objects.get_or_create(
+        user=user,
+        event=event,
+        defaults={'status': 'pending'}
+    )
+
+    if created:
+        messages.success(request, "You successfully applied.")
+    else:
+        messages.info(request, "You already applied.")
+
+    return redirect('volunteer_homepage')
+
+
+
+
+
+
+from django.utils import timezone
+from django.contrib import messages
+from django.shortcuts import render, redirect
+
+def volunteer_dashboard(request):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        messages.error(request, "Session expired.")
+        return redirect('login')
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        messages.error(request, "User not found.")
+        return redirect('login')
+
+    # Doar evenimente viitoare
+    events = Event.objects.filter(date__gte=timezone.now())
+    applied_event_ids = set(EventVolunteer.objects.filter(user=user).values_list('event_id', flat=True))
+
+    for event in events:
+        event.applied = event.id in applied_event_ids
+
+    return render(request, 'pages/homepage_volunteers.html', {
+        'user_name': f"{user.first_name} {user.last_name}",
+        'events': events
+    })
+
+@require_http_methods(["POST"])
+def update_application_status(request, app_id, status):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return redirect('login')
+
+    app = get_object_or_404(EventVolunteer, id=app_id)
+    if status in ['accepted', 'rejected']:
+        app.status = status
+        app.save()
+    return redirect('edit_event', id=app.event.id)
+
+
+

@@ -91,10 +91,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'mssql',  # Corrected ENGINE
         'NAME': 'BeeVolunteer',  # Should be a string
-        #'USER': 'sa',
-       # 'PASSWORD': 'beeVolunteer1!',
         'HOST': 'localhost',  # or use the IP address if you prefer
-       # 'PORT': '1433',  # default port
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',  # ODBC driver name
         },
