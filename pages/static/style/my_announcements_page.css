@@ -1,0 +1,120 @@
+.navbar .container {
+    padding: 0.5rem 1rem; /* vertical and horizontal padding */
+    max-width: 100%;     /* control the max width for large screens */
+    margin: 0 auto;        /* center the navbar content horizontally */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(to right, #ec9723, #fbc500); /* soft gradient */
+    border-radius: 8px;     /* slight rounding of corners */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* subtle inner shadow */
+    transition: all 0.3s ease-in-out;
+}
+
+/* On hover, add a subtle effect */
+.navbar .container:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+/* Make sure content inside doesn't wrap awkwardly */
+.navbar-brand {
+    font-size: 1.5rem;
+    color: #1a202c;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Dropdown customization */
+.dropdown .btn {
+    font-weight: 500;
+    padding: 0.4rem 1rem;
+    border-radius: 6px;
+}
+
+.dropdown-menu{
+    background-color: #bc8c25;
+}
+
+.dropdown-menu .dropdown-item:hover {
+    background-color: #c8c85a;
+    font-weight: bold;
+}
+
+/*TIMELINE CONTENT*/
+/* Timeline wrapper with vertical line */
+.timeline {
+    position: relative;
+    margin-left: 20px;
+    padding-left: 20px;
+    border-left: 4px solid #fbc500; /* Bee yellow vertical line */
+}
+
+/* Timeline card */
+.timeline .card {
+    position: relative;
+    margin-bottom: 2rem;
+    border-radius: 12px;
+    border-color: #fbc500 !important;
+    background: #efe6bd;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.timeline .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(251, 140, 0, 0.2);
+}
+
+/* Dot marker for each event */
+.timeline .card::before {
+    content: '';
+    position: absolute;
+    left: -34px;
+    top: 20px;
+    width: 16px;
+    height: 16px;
+    background-color: #ff9800;
+    border: 4px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px #fbc500;
+}
+
+/* Card content improvements */
+.timeline .card-title {
+    color: #ec9723;
+    font-weight: bold;
+    font-size: 1.25rem;
+}
+
+.timeline small.text-muted {
+    color: #777;
+}
+
+/* Description and info styling */
+.timeline p {
+    color: #444;
+}
+
+.timeline ul {
+    padding-left: 0;
+    list-style: none;
+}
+
+.timeline ul li {
+    padding: 2px 0;
+    font-size: 0.95rem;
+}
+
+.timeline .card {
+    opacity: 0;
+    transform: translateY(10px);
+    animation: fadeInUp 0.5s ease forwards;
+}
+
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
