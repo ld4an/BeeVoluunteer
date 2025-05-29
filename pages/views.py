@@ -3,7 +3,6 @@ from datetime import datetime
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.utils.timezone import make_aware, now
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
 
@@ -11,7 +10,7 @@ from django.views.decorators.http import require_http_methods
 from BeeVolunteer.models import User, Organization, Event, EventVolunteer
 from django.contrib.auth.hashers import make_password
 from django.utils import timezone
-from datetime import datetime
+
 from django.contrib.auth.hashers import check_password
 
 
@@ -26,7 +25,7 @@ def login_view(request):
         try:
             user = User.objects.get(id=request.session['user_id'])
             if user.role == 'volunteer':
-                return redirect('volunteer_homepage')
+                return redirect('two_btn')     #volunteer_homepage
             elif user.role == 'organizer':
                 return redirect('organization_homepage')
         except User.DoesNotExist:
@@ -45,7 +44,7 @@ def login_view(request):
             request.session['user_id'] = user.id
             messages.success(request, 'Logged in successfully!')
             if user.role == 'volunteer':
-                return redirect('volunteer_homepage')  # Or wherever
+                return redirect('two_btn')  # Or wherever ==> volunteer_homepage
             elif user.role == 'organizer':
                 return redirect('organization_homepage')
         else:
@@ -263,7 +262,6 @@ def logout_view(request):
     #messages.error(request, "Logged out successfully!")
     return redirect('login')
 
-# BUG FIX:
 @never_cache
 def add_event(request):
     if request.method == 'POST':
@@ -273,27 +271,23 @@ def add_event(request):
         location = request.POST.get('location')
         max_volunteers = request.POST.get('volunteer_count')
 
-        # Parse and validate date
+        # Parse date and time
+        from datetime import datetime
         try:
             event_datetime = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
-            event_datetime = make_aware(event_datetime)  # make it timezone-aware
         except ValueError:
             messages.error(request, "Invalid date format.")
             return redirect('add_event')
 
-        # Check if date is in the past
-        if event_datetime < timezone.now():
-            messages.error(request, "Event date must be in the future.")
-            return redirect('add_event')
-
-        # Get the logged-in user
+        # Obține utilizatorul logat
         user_id = request.session.get('user_id')
         user = User.objects.get(id=user_id)
 
-        # Determine organization
+        # Determină organizația
         if user.role == 'organizer' and user.organization:
             event_org = user.organization
         else:
+            # fallback pentru voluntari
             event_org, _ = Organization.objects.get_or_create(
                 name="Volunteer Created Events",
                 defaults={
@@ -302,7 +296,7 @@ def add_event(request):
                 }
             )
 
-        # Create the event
+        # Creează evenimentul cu organizație și utilizator
         Event.objects.create(
             name=name,
             description=description,
@@ -310,13 +304,13 @@ def add_event(request):
             location=location,
             max_volunteers=max_volunteers,
             organization=event_org,
-            user=user
+            user=user  # <- cheia!
         )
 
-        # Redirect based on role
+        # Redirecționează în funcție de rol
         return redirect('organization_homepage' if user.role == 'organizer' else 'volunteer_homepage')
 
-    # GET request
+    # GET
     user_id = request.session.get('user_id')
     user = User.objects.get(id=user_id)
     user_role = user.role
@@ -327,8 +321,7 @@ def add_event(request):
         'user': user,
         'user_role': user_role,
         'user_name': user_name,
-        'organization_name': organization_name,
-        'current_time': now().strftime('%Y-%m-%dT%H:%M')  # optional for frontend
+        'organization_name': organization_name
     })
 
 @never_cache
@@ -377,37 +370,21 @@ def edit_event(request, id):
     applications = EventVolunteer.objects.filter(event=event).select_related('user')
 
     if request.method == 'POST':
-        name = request.POST.get('event_name')
-        description = request.POST.get('description')
-        location = request.POST.get('location')
-        max_volunteers = request.POST.get('volunteer_count')
+        event.name = request.POST.get('event_name')
+        event.description = request.POST.get('description')
+        event.location = request.POST.get('location')
+        event.max_volunteers = request.POST.get('volunteer_count')
+
         date_str = request.POST.get('event_date')
+        from datetime import datetime
+        event.date = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
 
-        try:
-            new_date = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
-            new_date = make_aware(new_date)
-        except ValueError:
-            messages.error(request, "Invalid date format.")
-            return redirect('edit_event', id=id)
-
-        if new_date < now():
-            messages.error(request, "Event date must be in the future.")
-            return redirect('edit_event', id=id)
-
-        # Update event only if the date is valid
-        event.name = name
-        event.description = description
-        event.location = location
-        event.max_volunteers = max_volunteers
-        event.date = new_date
         event.save()
-
         return redirect('organization_homepage')
 
     return render(request, 'pages/edit_event.html', {
         'event': event,
-        'applications': applications,
-        'current_time': now().strftime('%Y-%m-%dT%H:%M')
+        'applications': applications
     })
 
 
@@ -497,5 +474,21 @@ def update_application_status(request, app_id, status):
         app.save()
     return redirect('edit_event', id=app.event.id)
 
+# ONE TRY
+def two_btn_volunteer_page_view(request):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        messages.error(request, "Session expired.")
+        return redirect('login')
 
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        messages.error(request, "User not found.")
+        return redirect('login')
 
+    user_name = f"{user.first_name} {user.last_name}" if user.role == 'volunteer' else user.organization.name
+
+    return render(request, 'pages/two_btn_volunteer_homepage.html', {
+        'user_name': user_name
+    })
