@@ -308,7 +308,7 @@ def add_event(request):
         )
 
         # Redirecționează în funcție de rol
-        return redirect('organization_homepage' if user.role == 'organizer' else 'volunteer_homepage')
+        return redirect('organization_homepage' if user.role == 'organizer' else 'volunteer_dashboard')
 
     # GET
     user_id = request.session.get('user_id')
@@ -342,11 +342,13 @@ def update_settings(request):
         # Get data from the form
         full_name = request.POST.get('username', '')
         email = request.POST.get('email', '')
+        phone = request.POST.get('phone', '')
         password = request.POST.get('password', '')
 
         # Split full name into first and last
         name_parts = full_name.strip().split(' ', 1)
         user.first_name = name_parts[0]
+        user.phone=phone
         user.last_name = name_parts[1] if len(name_parts) > 1 else ''
 
         user.email = email
@@ -361,12 +363,21 @@ def update_settings(request):
 
 def edit_event(request, id):
     user_id = request.session.get('user_id')
-
     if not user_id:
         return redirect('login')
 
-    user = User.objects.get(id=user_id)
-    event = get_object_or_404(Event, id=id, organization=user.organization)
+    user = get_object_or_404(User, id=user_id)
+
+    # pentru organizator
+    if user.role == 'organizer':
+        event = get_object_or_404(Event, id=id, organization=user.organization)
+    # pentru voluntar
+    elif user.role == 'volunteer':
+        event = get_object_or_404(Event, id=id, user=user)
+    else:
+        messages.error(request, "Unauthorized access.")
+        return redirect('login')
+
     applications = EventVolunteer.objects.filter(event=event).select_related('user')
 
     if request.method == 'POST':
@@ -380,7 +391,7 @@ def edit_event(request, id):
         event.date = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
 
         event.save()
-        return redirect('organization_homepage')
+        return redirect('organization_homepage' if user.role == 'organizer' else 'volunteer_dashboard')
 
     return render(request, 'pages/edit_event.html', {
         'event': event,
@@ -388,19 +399,31 @@ def edit_event(request, id):
     })
 
 
+@never_cache
 def delete_event(request, id):
     user_id = request.session.get('user_id')
     if not user_id:
         return redirect('login')
 
-    user = User.objects.get(id=user_id)
-    event = get_object_or_404(Event, id=id, organization=user.organization)
+    user = get_object_or_404(User, id=user_id)
+
+    # Organizator: poate șterge dacă evenimentul e al organizației
+    if user.role == 'organizer':
+        event = get_object_or_404(Event, id=id, organization=user.organization)
+    # Voluntar: poate șterge doar propriul eveniment
+    elif user.role == 'volunteer':
+        event = get_object_or_404(Event, id=id, user=user)
+    else:
+        messages.error(request, "Unauthorized action.")
+        return redirect('login')
 
     if request.method == 'POST':
         event.is_active = False
         event.save()
+        messages.success(request, "Event deleted (marked as inactive).")
 
-    return redirect('organization_homepage')
+    return redirect('organization_homepage' if user.role == 'organizer' else 'volunteer_dashboard')
+
 
 def apply_to_event(request, event_id):
     user_id = request.session.get('user_id')
@@ -436,8 +459,10 @@ def apply_to_event(request, event_id):
 
 from django.utils import timezone
 from django.contrib import messages
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
+from BeeVolunteer.models import Event, EventVolunteer, User
 
+@never_cache
 def volunteer_dashboard(request):
     user_id = request.session.get('user_id')
     if not user_id:
@@ -450,16 +475,24 @@ def volunteer_dashboard(request):
         messages.error(request, "User not found.")
         return redirect('login')
 
-    # Doar evenimente viitoare
-    events = Event.objects.filter(date__gte=timezone.now())
-    applied_event_ids = set(EventVolunteer.objects.filter(user=user).values_list('event_id', flat=True))
+    # Evenimente viitoare și active (dar NU cele proprii)
+    events = Event.objects.filter(date__gte=timezone.now(), is_active=True).exclude(user=user)
+
+    # Aplicații
+    applications = EventVolunteer.objects.filter(user=user).select_related('event')
+    applied_event_ids = [app.event.id for app in applications]
+    app_map = {app.event.id: app for app in applications}
 
     for event in events:
-        event.applied = event.id in applied_event_ids
+        event.application = app_map.get(event.id)
+
+    # Evenimentele create de utilizator
+    my_events = Event.objects.filter(user=user, is_active=True).order_by('-date')
 
     return render(request, 'pages/homepage_volunteers.html', {
         'user_name': f"{user.first_name} {user.last_name}",
-        'events': events
+        'events': events,
+        'my_events': my_events,
     })
 
 @require_http_methods(["POST"])
