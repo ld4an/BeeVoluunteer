@@ -1,0 +1,99 @@
+/* Center the login container */
+.login-container {
+    max-width: 420px;
+    margin: 5rem auto;
+    padding: 2rem;
+    background: #fffef5; /* light bee background */
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(251, 140, 0, 0.2);
+    transition: transform 0.3s ease;
+
+    position: relative;
+    top: 120px;
+}
+
+/* On hover, gently elevate the form */
+.login-container:hover {
+    transform: translateY(-4px);
+}
+
+/* Headline */
+.login-container h3 {
+    color: #ec9723;
+    font-weight: 700;
+}
+
+/* Labels */
+.form-label {
+    font-weight: 500;
+    color: #444;
+}
+
+/* Form controls on focus */
+.form-control:focus {
+    border-color: #fbc500;
+    box-shadow: 0 0 0 0.2rem rgba(251, 192, 45, 0.25);
+}
+
+/* Checkbox */
+.form-check-label {
+    color: #666;
+}
+
+/* Submit button styling */
+.btn-primary {
+    background-color: #fbc500;
+    border: none;
+    font-weight: 600;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-primary:hover {
+    background-color: #ec9723;
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(236, 151, 35, 0.3);
+}
+
+/* Password toggle button */
+.password-toggle {
+    background-color: #fffef5;
+    border: 1px solid #ced4da;
+}
+
+/* Footer links */
+.login-container .text-center a {
+    margin: 0 0.5rem;
+    color: #ec9723;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.login-container .text-center a:hover {
+    text-decoration: underline;
+}
+
+/* Floating message */
+.floating-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #ffe082;
+    color: #212121;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    animation: fadeInOut 4s ease-in-out forwards;
+    z-index: 1050;
+}
+
+/* Floating animation */
+@keyframes fadeInOut {
+    0%   { opacity: 0; transform: translateY(-20px); }
+    10%  { opacity: 1; transform: translateY(0); }
+    90%  { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-20px); }
+}
+
+.login_whole_body{
+    background-image: url("../images/login_background.jpg");
+}

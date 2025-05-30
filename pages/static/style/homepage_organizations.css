@@ -1,0 +1,132 @@
+/* Style for the main container inside the navbar */
+.navbar .container {
+    padding: 0.5rem 1rem; /* vertical and horizontal padding */
+    max-width: 100%;     /* control the max width for large screens */
+    margin: 0 auto;        /* center the navbar content horizontally */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(to right, #ec9723, #fbc500); /* soft gradient */
+    border-radius: 8px;     /* slight rounding of corners */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* subtle inner shadow */
+    transition: all 0.3s ease-in-out;
+}
+
+/* On hover, add a subtle effect */
+.navbar .container:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+/* Make sure content inside doesn't wrap awkwardly */
+.navbar-brand {
+    font-size: 1.5rem;
+    color: #1a202c;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Dropdown customization */
+.dropdown .btn {
+    font-weight: 500;
+    padding: 0.4rem 1rem;
+    border-radius: 6px;
+}
+
+.dropdown-menu{
+    background-color: #bc8c25;
+}
+
+.dropdown-menu .dropdown-item:hover {
+    background-color: #c8c85a;
+    font-weight: bold;
+}
+
+/*MAIN CONTENT*/
+
+/* Container styling for main content */
+.container {
+    background: linear-gradient(to bottom right, #fffbea, #fff0c2);
+    padding: 3rem 2rem;
+    border-radius: 16px;
+    box-shadow: 0 8px 16px rgba(255, 204, 0, 0.2);
+    transition: all 0.3s ease-in-out;
+}
+
+/* Hover effect */
+.container:hover {
+    box-shadow: 0 12px 24px rgba(255, 153, 0, 0.3);
+}
+
+/* Heading styles */
+.container h1 {
+    font-size: 2.75rem;
+    font-weight: bold;
+    color: #ff9800; /* orange */
+    text-shadow: 1px 1px 0 #fff;
+}
+
+/* Paragraph style */
+.container p.lead {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: #e37e47;
+    margin-bottom: 2rem;
+}
+
+/* Grid layout for buttons */
+.d-grid .btn {
+    font-size: 1.25rem;
+    padding: 1rem;
+    border-radius: 12px;
+    font-weight: 600;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Primary button (organizer) */
+.btn-primary {
+    background-color: #ffcc00;
+    border: none;
+    color: #212121;
+}
+
+.btn-primary:hover {
+    background-color: #ffc107;
+    transform: scale(1.03);
+    box-shadow: 0 6px 12px rgba(255, 193, 7, 0.4);
+}
+
+/* Success button (volunteer) */
+.btn-success {
+    background-color: #ff9800;
+    border: none;
+    color: #fff;
+}
+
+.btn-success:hover {
+    background-color: #fb8c00;
+    transform: scale(1.03);
+    box-shadow: 0 6px 12px rgba(255, 152, 0, 0.4);
+}
+
+
+/*image style*/
+
+.raised_hands-image {
+    display: block;
+    margin-left: auto;
+    margin-top: 4rem;
+    margin-right: auto;
+    margin-bottom: 1rem;
+}
+
+.national_volunteers-image{
+    display: block;
+    width: auto;
+    height: auto;
+    margin-left: auto;
+    margin-top: 2rem;
+    margin-right: auto;
+    margin-bottom: 1rem;
+}

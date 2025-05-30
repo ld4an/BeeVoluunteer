@@ -56,7 +56,12 @@ class Event(models.Model):
     date = models.DateTimeField()  # Scheduled date and time
     location = models.CharField(max_length=255)  # Physical or online location
     max_volunteers = models.IntegerField(null=True, blank=True)  # Optional volunteer limit
+<<<<<<<< HEAD:BeeVolunteer/models.py
     organization = models.ForeignKey(Organization, null=True, blank=True, on_delete=models.CASCADE)  # Event belongs to an organization
+========
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)  # Event belongs to an organization
+    user = models.ForeignKey(User, on_delete=models.CASCADE)  # Event organized by a user
+>>>>>>>> origin/Andor:BeeVolunteer/BeeVolunteer/models.py
     created_at = models.DateTimeField(auto_now_add=True)  # Timestamp when created
     updated_at = models.DateTimeField(auto_now=True)  # Auto-updated timestamp
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)

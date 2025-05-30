@@ -23,5 +23,5 @@ urlpatterns = [
     path('event/<int:event_id>/apply/', views.apply_to_event, name='apply_to_event'),
     path("volunteer-dashboard/", views.volunteer_dashboard, name="volunteer_dashboard"),
     path('update-application/<int:app_id>/<str:status>/', views.update_application_status, name='update_application_status'),
-
+    path('two_btn', views.two_btn_volunteer_page_view, name='two_btn'),
 ]

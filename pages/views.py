@@ -25,7 +25,7 @@ def login_view(request):
         try:
             user = User.objects.get(id=request.session['user_id'])
             if user.role == 'volunteer':
-                return redirect('volunteer_homepage')
+                return redirect('two_btn')     #volunteer_homepage
             elif user.role == 'organizer':
                 return redirect('organization_homepage')
         except User.DoesNotExist:
@@ -44,7 +44,7 @@ def login_view(request):
             request.session['user_id'] = user.id
             messages.success(request, 'Logged in successfully!')
             if user.role == 'volunteer':
-                return redirect('volunteer_homepage')  # Or wherever
+                return redirect('two_btn')  # Or wherever ==> volunteer_homepage
             elif user.role == 'organizer':
                 return redirect('organization_homepage')
         else:
@@ -474,5 +474,21 @@ def update_application_status(request, app_id, status):
         app.save()
     return redirect('edit_event', id=app.event.id)
 
+# ONE TRY
+def two_btn_volunteer_page_view(request):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        messages.error(request, "Session expired.")
+        return redirect('login')
 
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        messages.error(request, "User not found.")
+        return redirect('login')
 
+    user_name = f"{user.first_name} {user.last_name}" if user.role == 'volunteer' else user.organization.name
+
+    return render(request, 'pages/two_btn_volunteer_homepage.html', {
+        'user_name': user_name
+    })
