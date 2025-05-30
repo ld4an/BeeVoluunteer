@@ -522,6 +522,12 @@ def two_btn_volunteer_page_view(request):
 
     user_name = f"{user.first_name} {user.last_name}" if user.role == 'volunteer' else user.organization.name
 
+    # ✅ Filter events
+    applied_event_ids = EventVolunteer.objects.filter(user=user).values_list('event_id', flat=True)
+    now = timezone.now()
+    events = Event.objects.filter(is_active=True, date__gt=now).exclude(id__in=applied_event_ids)
+
     return render(request, 'pages/two_btn_volunteer_homepage.html', {
-        'user_name': user_name
+        'user_name': user_name,
+        'events': events,  # ✅ FIXED
     })
