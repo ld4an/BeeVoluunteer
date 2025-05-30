@@ -1,0 +1,136 @@
+/* Style for the main container inside the navbar */
+.navbar .container {
+    padding: 0.5rem 1rem; /* vertical and horizontal padding */
+    max-width: 100%;     /* control the max width for large screens */
+    margin: 0 auto;        /* center the navbar content horizontally */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(to right, #ec9723, #fbc500); /* soft gradient */
+    border-radius: 8px;     /* slight rounding of corners */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* subtle inner shadow */
+    transition: all 0.3s ease-in-out;
+}
+
+/* On hover, add a subtle effect */
+.navbar .container:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+/* Make sure content inside doesn't wrap awkwardly */
+.navbar-brand {
+    font-size: 1.5rem;
+    color: #1a202c;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Dropdown customization */
+.dropdown .btn {
+    font-weight: 500;
+    padding: 0.4rem 1rem;
+    border-radius: 6px;
+}
+
+.dropdown-menu{
+    background-color: #bc8c25;
+}
+
+.dropdown-menu .dropdown-item:hover {
+    background-color: #c8c85a;
+    font-weight: bold;
+}
+
+/*MAIN CONTENT*/
+/* Container styling */
+.container {
+    max-width: 700px;
+    margin: 5rem auto;
+    background-color: #fffef5;
+    padding: 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 8px 20px rgba(251, 192, 45, 0.15);
+}
+
+/* Section heading */
+.container h2 {
+    text-align: center;
+    color: #ec9723;
+    font-weight: bold;
+    margin-bottom: 2rem;
+}
+
+/* Form labels */
+.form-label {
+    font-weight: 500;
+    color: #444;
+}
+
+/* Inputs & Textareas */
+.form-control {
+    border-radius: 8px;
+    padding: 0.6rem 0.75rem;
+    transition: box-shadow 0.2s ease-in-out;
+}
+
+.form-control:focus {
+    border-color: #fbc500;
+    box-shadow: 0 0 0 0.2rem rgba(251, 192, 45, 0.3);
+}
+
+/* Save button */
+.btn-primary {
+    background-color: #fbc500;
+    border: none;
+    font-weight: bold;
+    padding: 0.6rem 1.25rem;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+    background-color: #ec9723;
+    transform: scale(1.03);
+    box-shadow: 0 4px 12px rgba(236, 151, 35, 0.25);
+}
+
+/* Validation styling */
+.is-invalid {
+    border-color: #dc3545;
+}
+
+.invalid-feedback {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* Alert message animations */
+.alert.auto-dismiss {
+    animation: fadeOut 5s forwards;
+    background-color: #fff3cd;
+    border-color: #ffeeba;
+    color: #856404;
+    border-radius: 8px;
+}
+
+/* Smooth fade out for flash messages */
+@keyframes fadeOut {
+    0%   { opacity: 1; }
+    80%  { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-10px); }
+}
+
+.account_settings-image {
+    width: 50px;
+    height: auto;
+    margin-left: 0.5rem;
+    transition: transform 0.3s ease;
+}
+
+.account_settings-image:hover {
+    transform: scale(1.1) rotate(-5deg);
+}
+
+

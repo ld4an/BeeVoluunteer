@@ -1,0 +1,112 @@
+/* Style for the main container inside the navbar */
+.navbar .container {
+    padding: 0.5rem 1rem; /* vertical and horizontal padding */
+    max-width: 100%;     /* control the max width for large screens */
+    margin: 0 auto;        /* center the navbar content horizontally */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(to right, #ec9723, #fbc500); /* soft gradient */
+    border-radius: 8px;     /* slight rounding of corners */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* subtle inner shadow */
+    transition: all 0.3s ease-in-out;
+}
+
+/* On hover, add a subtle effect */
+.navbar .container:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+/* Make sure content inside doesn't wrap awkwardly */
+.navbar-brand {
+    font-size: 1.5rem;
+    color: #1a202c;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Dropdown customization */
+.dropdown .btn {
+    font-weight: 500;
+    padding: 0.4rem 1rem;
+    border-radius: 6px;
+}
+
+.dropdown-menu{
+    background-color: #bc8c25;
+}
+
+.dropdown-menu .dropdown-item:hover {
+    background-color: #c8c85a;
+    font-weight: bold;
+}
+
+/*FORM STYLE*/
+.card {
+    border: none;
+    border-radius: 16px;
+    background: #fffef5; /* subtle light yellow */
+    box-shadow: 0 8px 20px rgba(255, 193, 7, 0.15);
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+}
+
+/* Card header - bee yellow */
+.card-header {
+    background: linear-gradient(to right, #ffcc00, #ffa726);
+    color: #212121;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+}
+
+/* Headline inside the header */
+.card-header h5 {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* Input and textarea focus effect */
+.form-control:focus {
+    border-color: #ff9800;
+    box-shadow: 0 0 0 0.25rem rgba(255, 152, 0, 0.25);
+    transition: all 0.2s ease-in-out;
+}
+
+/* Labels styling */
+.form-label {
+    color: #555;
+    font-weight: 500;
+}
+
+/* Submit button */
+.btn-success {
+    background-color: #ffa000;
+    border: none;
+    font-weight: bold;
+    padding: 0.6rem 1.4rem;
+    border-radius: 8px;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.btn-success:hover {
+    background-color: #fb8c00;
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(251, 140, 0, 0.3);
+}
+
+/*.help_hands-image{*/
+/*    max-width: 10%;*/
+/*    position: relative;*/
+/*    left: 1420px;*/
+/*    bottom: 180px;*/
+/*}*/
+
+.whole_body{
+    background-image: url("../images/plant.png");
+}
+
+

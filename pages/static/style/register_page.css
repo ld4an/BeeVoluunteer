@@ -1,0 +1,96 @@
+/* Center and style the register container */
+.register-container {
+    max-width: 500px;
+    margin: 5rem auto;
+    padding: 2.5rem;
+    background-color: #fffef5;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(251, 192, 45, 0.15);
+    transition: transform 0.3s ease;
+}
+
+.register-container:hover {
+    transform: translateY(-3px);
+}
+
+/* Heading */
+.register-container h3 {
+    color: #ec9723;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+}
+
+/* Labels */
+.form-label {
+    font-weight: 500;
+    color: #444;
+}
+
+/* Input and textarea styling */
+.form-control {
+    border-radius: 8px;
+    padding: 0.6rem 0.75rem;
+    transition: box-shadow 0.2s ease-in-out;
+}
+
+.form-control:focus {
+    border-color: #fbc500;
+    box-shadow: 0 0 0 0.2rem rgba(251, 192, 45, 0.3);
+}
+
+/* Select styling */
+.form-select:focus {
+    border-color: #fbc500;
+    box-shadow: 0 0 0 0.2rem rgba(251, 192, 45, 0.3);
+}
+
+/* Password toggle button */
+.password-toggle {
+    background-color: #fffef5;
+    border: 1px solid #ced4da;
+    transition: background 0.2s;
+}
+
+.password-toggle:hover {
+    background-color: #fff9e3;
+}
+
+/* Submit button */
+.btn-primary {
+    background-color: #fbc500;
+    border: none;
+    font-weight: bold;
+    padding: 0.6rem 1.25rem;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+    background-color: #ec9723;
+    transform: scale(1.03);
+    box-shadow: 0 4px 12px rgba(236, 151, 35, 0.25);
+}
+
+/* Login redirect text */
+.register-container .text-center a {
+    color: #ec9723;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.register-container .text-center a:hover {
+    text-decoration: underline;
+}
+
+input.form-control:focus,
+textarea.form-control:focus,
+select.form-select:focus {
+    border-color: #fbc500;
+    box-shadow: 0 0 0 0.2rem rgba(251, 192, 45, 0.3);
+    outline: none; /* remove browser default outline */
+}
+
+.register_whole_body{
+    background-image: url("../images/login_background.jpg");
+}
+
