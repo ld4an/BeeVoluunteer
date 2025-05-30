@@ -69,7 +69,7 @@
                 <td>{{ event.name }}</td>
                 <td>{{ event.date|date:"Y-m-d H:i" }}</td>
                 <td>{{ event.location }}</td>
-                <td>{{ event.organization.name }}</td>
+                <td>{{ event.organization.name|default:"Volunteer Created Events" }}</td>
                 <td>{{ event.description|default:"-" }}</td>
                 <td>
                     {% if event.application %}
@@ -87,7 +87,7 @@
                     {% endif %}
                 </td>
                 <td>
-                    {% if event.user.id == request.session.user_id %}
+                    {% if event.user.id == user_id %}
                     <button class="btn btn-sm btn-secondary" disabled>Your Event</button>
                     {% elif not event.application %}
                     <form method="POST" action="{% url 'apply_to_event' event.id %}">
@@ -130,7 +130,13 @@
                 <td>{{ event.name }}</td>
                 <td>{{ event.date|date:"Y-m-d H:i" }}</td>
                 <td>{{ event.location }}</td>
-                <td>{{ event.description|default:"-" }}</td>
+                <td>
+                    {% if event.organization %}
+                    {{ event.organization.name }}
+                    {% else %}
+                    Volunteer Created Events
+                    {% endif %}
+                </td>
                 <td>{{ event.max_volunteers }}</td>
                 <td>
                     <a href="{% url 'edit_event' event.id %}" class="btn btn-sm btn-outline-secondary">Edit</a>

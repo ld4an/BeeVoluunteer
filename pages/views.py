@@ -25,31 +25,40 @@ def login_view(request):
         try:
             user = User.objects.get(id=request.session['user_id'])
             if user.role == 'volunteer':
-                return redirect('two_btn')     #volunteer_homepage
+                return redirect('two_btn')
             elif user.role == 'organizer':
                 return redirect('organization_homepage')
         except User.DoesNotExist:
-            pass  # if user not found, allow to continue to login page
+            pass
 
     if request.method == 'POST':
         email = request.POST.get('email')
         password = request.POST.get('password')
+        remember_me = request.POST.get('remember_me')
 
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
             messages.error(request, 'User not found.')
             return redirect('login')
-        if check_password(password, user.password):  # Check password against hashed one
+
+        if check_password(password, user.password):
             request.session['user_id'] = user.id
-            messages.success(request, 'Logged in successfully!')
+
+            if remember_me:
+                request.session.set_expiry(7 * 24 * 60 * 60)
+            else:
+                # Expiră la închiderea browserului
+                request.session.set_expiry(0)
+
             if user.role == 'volunteer':
-                return redirect('two_btn')  # Or wherever ==> volunteer_homepage
+                return redirect('two_btn')
             elif user.role == 'organizer':
                 return redirect('organization_homepage')
         else:
             messages.error(request, 'Incorrect password.')
             return redirect('login')
+
     return render(request, 'pages/login.html')
 
 def register_view(request):
@@ -117,7 +126,6 @@ def password_reset(request):
             user = User.objects.get(email=email)
             user.password = make_password(new_password)
             user.save()
-            messages.success(request, "Password reset successfully.")
             return redirect('login')
         except User.DoesNotExist:
             messages.error(request, "User not found.")
@@ -264,6 +272,18 @@ def logout_view(request):
 
 @never_cache
 def add_event(request):
+    user_id = request.session.get('user_id')
+
+    if not user_id:
+        messages.error(request, "Session expired. Please log in again.")
+        return redirect('login')
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        messages.error(request, "Session expired or user no longer exists.")
+        return redirect('login')
+
     if request.method == 'POST':
         name = request.POST.get('event_name')
         description = request.POST.get('description')
@@ -271,7 +291,6 @@ def add_event(request):
         location = request.POST.get('location')
         max_volunteers = request.POST.get('volunteer_count')
 
-        # Parse date and time
         from datetime import datetime
         try:
             event_datetime = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
@@ -279,15 +298,9 @@ def add_event(request):
             messages.error(request, "Invalid date format.")
             return redirect('add_event')
 
-        # Obține utilizatorul logat
-        user_id = request.session.get('user_id')
-        user = User.objects.get(id=user_id)
-
-        # Determină organizația
         if user.role == 'organizer' and user.organization:
             event_org = user.organization
         else:
-            # fallback pentru voluntari
             event_org, _ = Organization.objects.get_or_create(
                 name="Volunteer Created Events",
                 defaults={
@@ -296,7 +309,6 @@ def add_event(request):
                 }
             )
 
-        # Creează evenimentul cu organizație și utilizator
         Event.objects.create(
             name=name,
             description=description,
@@ -304,15 +316,12 @@ def add_event(request):
             location=location,
             max_volunteers=max_volunteers,
             organization=event_org,
-            user=user  # <- cheia!
+            user=user
         )
 
-        # Redirecționează în funcție de rol
         return redirect('organization_homepage' if user.role == 'organizer' else 'volunteer_dashboard')
 
-    # GET
-    user_id = request.session.get('user_id')
-    user = User.objects.get(id=user_id)
+    # GET method
     user_role = user.role
     user_name = f"{user.first_name} {user.last_name}" if user_role == 'volunteer' else user.organization.name
     organization_name = user.organization.name if user_role == 'organizer' and user.organization else None
@@ -367,6 +376,7 @@ def edit_event(request, id):
         return redirect('login')
 
     user = get_object_or_404(User, id=user_id)
+    user_name = f"{user.first_name} {user.last_name}"
 
     # pentru organizator
     if user.role == 'organizer':
@@ -395,12 +405,14 @@ def edit_event(request, id):
 
     return render(request, 'pages/edit_event.html', {
         'event': event,
+        'user_name': user_name,
         'applications': applications
     })
 
 
 @never_cache
 def delete_event(request, id):
+
     user_id = request.session.get('user_id')
     if not user_id:
         return redirect('login')
@@ -437,7 +449,7 @@ def apply_to_event(request, event_id):
     # NU permite aplicarea la evenimente inactive
     if not event.is_active:
         messages.error(request, "You cannot apply to an inactive event.")
-        return redirect('volunteer_homepage')
+        return redirect('volunteer_dashboard')
 
     application, created = EventVolunteer.objects.get_or_create(
         user=user,
@@ -450,7 +462,7 @@ def apply_to_event(request, event_id):
     else:
         messages.info(request, "You already applied.")
 
-    return redirect('volunteer_homepage')
+    return redirect('volunteer_dashboard')
 
 
 
@@ -476,7 +488,8 @@ def volunteer_dashboard(request):
         return redirect('login')
 
     # Evenimente viitoare și active (dar NU cele proprii)
-    events = Event.objects.filter(date__gte=timezone.now(), is_active=True).exclude(user=user)
+    events = Event.objects.filter(date__gte=timezone.now(), is_active=True).exclude(user=user)\
+        .select_related('user', 'organization')
 
     # Aplicații
     applications = EventVolunteer.objects.filter(user=user).select_related('event')
@@ -491,6 +504,7 @@ def volunteer_dashboard(request):
 
     return render(request, 'pages/homepage_volunteers.html', {
         'user_name': f"{user.first_name} {user.last_name}",
+        'user_id': user.id,  # <-- important pentru template
         'events': events,
         'my_events': my_events,
     })
@@ -502,10 +516,20 @@ def update_application_status(request, app_id, status):
         return redirect('login')
 
     app = get_object_or_404(EventVolunteer, id=app_id)
+    event = app.event
+
+    if status == 'accepted':
+        accepted_count = EventVolunteer.objects.filter(event=event, status='accepted').count()
+        if accepted_count >= event.max_volunteers:
+            messages.error(request, f"Cannot accept more than {event.max_volunteers} volunteer(s) for this event.")
+            return redirect('edit_event', id=event.id)
+
     if status in ['accepted', 'rejected']:
         app.status = status
         app.save()
-    return redirect('edit_event', id=app.event.id)
+        messages.success(request, f"Application {status}.")
+
+    return redirect('edit_event', id=event.id)
 
 # ONE TRY
 def two_btn_volunteer_page_view(request):

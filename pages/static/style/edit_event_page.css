@@ -42,15 +42,6 @@
     font-weight: bold;
 }
 
-/*FORM STYLE*/
-.card {
-    border: none;
-    border-radius: 16px;
-    background: #fffef5; /* subtle light yellow */
-    box-shadow: 0 8px 20px rgba(255, 193, 7, 0.15);
-    transition: transform 0.2s ease-in-out;
-}
-
 .card:hover {
     transform: translateY(-4px);
 }
